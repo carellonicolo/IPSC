@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import HitCounter from './components/HitCounter';
 import Modal from './components/Modal';
 import { calculateHitFactor } from './utils/scoring';
-import { Timer, RefreshCcw, Activity, Info, Sun, Moon } from 'lucide-react';
+import { Timer, RefreshCcw, Activity, Info, Sun, Moon, BookOpen, Download, Github, LayoutGrid, FileText, Zap, Flame } from 'lucide-react';
 
 function App() {
   const [isMajor, setIsMajor] = useState(false);
@@ -65,6 +65,28 @@ function App() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 600 }}>
           Hit Factor Calculator
         </p>
+
+        {/* HEADER TOOLBAR LInks/Modals */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', maxWidth: '600px', margin: '20px auto 0 auto', padding: '0 16px' }}>
+          {/* Sx - Regolamenti */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setActiveModal('rules')} className="toolbar-btn">
+              <BookOpen size={16} /> Regole IPSC
+            </button>
+            <button onClick={() => setActiveModal('downloads')} className="toolbar-btn">
+              <Download size={16} /> Scarica PDF
+            </button>
+          </div>
+          {/* Dx - Esterni */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <a href="https://github.com/nicolocarello/IPSC" target="_blank" rel="noopener noreferrer" className="toolbar-btn">
+              <Github size={16} /> Github
+            </a>
+            <a href="https://apps.nicolocarello.it" target="_blank" rel="noopener noreferrer" className="toolbar-btn">
+              <LayoutGrid size={16} /> Altre Apps
+            </a>
+          </div>
+        </div>
       </header>
 
       {/* CORE LAYOUT */}
@@ -73,27 +95,27 @@ function App() {
         {/* COLONNA SINISTRA (Hits / Penalties) */}
         <div className="grid-left" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           
-          <h2 style={{ 
-            fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', 
-            color: 'var(--text-secondary)', margin: '0 0 4px 16px', display: 'flex', alignItems: 'center', gap: '8px'
-          }}>
-            Hits
-            <button onClick={() => setActiveModal('hits')} aria-label="Info Hits" style={{ color: 'var(--accent-color)' }}><Info size={16} /></button>
-          </h2>
-          <div className="card" style={{ padding: '8px 24px' }}>
+          <div className="card" style={{ padding: '24px' }}>
+            <h2 style={{ 
+              fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', 
+              color: 'var(--text-secondary)', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '8px'
+            }}>
+              Hits
+              <button onClick={() => setActiveModal('hits')} aria-label="Info Hits" style={{ color: 'var(--accent-color)' }}><Info size={16} /></button>
+            </h2>
             <HitCounter label="Alpha (A)" description="5 Points" value={hits.A} onChange={(val) => handleHitChange('A', val)} colorVar="--accent-color" />
             <HitCounter label="Charlie (C)" description={isMajor ? "4 Points" : "3 Points"} value={hits.C} onChange={(val) => handleHitChange('C', val)} />
             <HitCounter label="Delta (D)" description={isMajor ? "2 Points" : "1 Point"} value={hits.D} onChange={(val) => handleHitChange('D', val)} isLast={true} />
           </div>
 
-          <h2 style={{ 
-            fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', 
-            color: 'var(--text-secondary)', margin: '16px 0 4px 16px', display: 'flex', alignItems: 'center', gap: '8px'
-          }}>
-            Penalties
-            <button onClick={() => setActiveModal('penalties')} aria-label="Info Penalità" style={{ color: 'var(--accent-color)' }}><Info size={16} /></button>
-          </h2>
-          <div className="card" style={{ padding: '8px 24px', marginBottom: '0' }}>
+          <div className="card" style={{ padding: '24px', marginBottom: '0' }}>
+            <h2 style={{ 
+              fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', 
+              color: 'var(--text-secondary)', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '8px'
+            }}>
+              Penalties
+              <button onClick={() => setActiveModal('penalties')} aria-label="Info Penalità" style={{ color: 'var(--accent-color)' }}><Info size={16} /></button>
+            </h2>
             <HitCounter label="Miss (M)" description="-10 Points" value={hits.M} onChange={(val) => handleHitChange('M', val)} colorVar="--danger-color" />
             <HitCounter label="No-Shoot (NS)" description="-10 Points" value={hits.NS} onChange={(val) => handleHitChange('NS', val)} colorVar="--danger-color" />
             <HitCounter label="Procedural" description="-10 Points" value={hits.PROC} onChange={(val) => handleHitChange('PROC', val)} colorVar="--danger-color" isLast={true} />
@@ -103,24 +125,6 @@ function App() {
         {/* COLONNA DESTRA (Stato, Tempo, Setup O Bottom in Mobile) */}
         <div className="grid-right">
           
-          {/* RESULT CARD: MOSTATA SOLO SU DESKTOP (Su Mobile c'è la Bottom Bar) */}
-          <div className="card desktop-only" style={{ marginBottom: '0', border: '2px solid var(--border-color)', transform: 'scale(1.02)' }}>
-            <div className="flex-between">
-              <div>
-                <span onClick={() => setActiveModal('hitfactor')} style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  Hit Factor <Info size={14} color="var(--accent-color)" />
-                </span>
-                <div style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1, color: 'var(--accent-color)', marginTop: '8px' }}>
-                  {result.hitFactor.toFixed(4)}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Punti: <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '18px' }}>{result.stageScore}</span></div>
-                {result.totalPenalties > 0 && <div style={{ fontSize: '15px', color: 'var(--danger-color)', fontWeight: 600 }}>Penalità: -{result.totalPenalties}</div>}
-              </div>
-            </div>
-          </div>
-
           {/* CONFIG CARD */}
           <div className="card" style={{ marginBottom: '0' }}>
             <div className="flex-between" style={{ marginBottom: '20px' }}>
@@ -129,11 +133,11 @@ function App() {
                 <button onClick={() => setActiveModal('powerfactor')} style={{ color: 'var(--accent-color)' }}><Info size={18} /></button>
               </h2>
               <div style={{ display: 'flex', backgroundColor: 'var(--bg-color)', borderRadius: '10px', padding: '4px' }}>
-                <button onClick={() => setIsMajor(false)} style={{ padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: !isMajor ? 'var(--card-bg)' : 'transparent', color: !isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: !isMajor ? 'var(--shadow-sm)' : 'none' }}>
-                  Minor
+                <button onClick={() => setIsMajor(false)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: !isMajor ? 'var(--card-bg)' : 'transparent', color: !isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: !isMajor ? 'var(--shadow-sm)' : 'none', transition: 'var(--transition)' }}>
+                  <Zap size={16} /> Minor
                 </button>
-                <button onClick={() => setIsMajor(true)} style={{ padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: isMajor ? 'var(--card-bg)' : 'transparent', color: isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: isMajor ? 'var(--shadow-sm)' : 'none' }}>
-                  Major
+                <button onClick={() => setIsMajor(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: isMajor ? 'var(--card-bg)' : 'transparent', color: isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: isMajor ? 'var(--shadow-sm)' : 'none', transition: 'var(--transition)' }}>
+                  <Flame size={16} /> Major
                 </button>
               </div>
             </div>
@@ -153,8 +157,26 @@ function App() {
             </div>
           </div>
 
-          {/* RESET DESKTOP ONLY (Su mobile il reset è nella bottom bar) */}
-          <button className="desktop-only" onClick={handleReset} style={{ width: '100%', padding: '16px', color: 'var(--danger-color)', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+          {/* RESULT CARD: MOSTRATA SOLO SU DESKTOP (Su Mobile c'è la Bottom Bar) */}
+          <div className="card desktop-only" style={{ marginBottom: '0', border: '2px solid var(--border-color)', transform: 'scale(1.02)' }}>
+            <div className="flex-between">
+              <div>
+                <span onClick={() => setActiveModal('hitfactor')} style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  Hit Factor <Info size={14} color="var(--accent-color)" />
+                </span>
+                <div style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1, color: 'var(--accent-color)', marginTop: '8px' }}>
+                  {result.hitFactor.toFixed(4)}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Punti: <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '18px' }}>{result.stageScore}</span></div>
+                {result.totalPenalties > 0 && <div style={{ fontSize: '15px', color: 'var(--danger-color)', fontWeight: 600 }}>Penalità: -{result.totalPenalties}</div>}
+              </div>
+            </div>
+          </div>
+
+          {/* RESET DESKTOP ONLY */}
+          <button className="desktop-only" onClick={handleReset} style={{ width: '100%', padding: '16px', color: 'var(--danger-color)', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justify_content: 'center', gap: '10px', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
             <RefreshCcw size={20} /> Reset Stage
           </button>
         </div>
@@ -282,6 +304,53 @@ function App() {
             <strong style={{ color: 'var(--danger-color)', fontSize: '16px' }}>Procedural - Infrazione Regolamentare:</strong>
             <p style={{ marginTop: '4px', fontSize: '14px', color: 'var(--text-secondary)' }}>Assegnata dal Range Officer (Giudice) se il tiratore calpesta le linee esterne del campo (fault lines), esplode colpi col piede fuori area, o viola obblighi di percorso specifici del briefing.</p>
           </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'downloads'} onClose={() => setActiveModal(null)} title="Scarica i Regolamenti Ufficiali" maxWidth="500px">
+        <p style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>Scarica sul tuo dispositivo i file PDF ufficiali del regolamento sportivo FIDTS e IPSC Handgun.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+           <a href="/regolamenti/IPSC-Handgun-Competition-Rules-Jan-2026-Edition-Final-29-Dec-2025.pdf" download className="download-card">
+              <FileText size={20} color="var(--accent-color)" /><div style={{ flex: 1 }}><strong>IPSC Handgun Rules (ENG)</strong><div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Edizione Gennaio 2026</div></div><Download size={18} />
+           </a>
+           <a href="/regolamenti/HandgunRegolamentoGennaio2024VersioneFinale-.pdf" download className="download-card">
+              <FileText size={20} color="var(--accent-color)" /><div style={{ flex: 1 }}><strong>Regolamento Handgun FITDS (ITA)</strong><div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Edizione Gennaio 2024</div></div><Download size={18} />
+           </a>
+           <a href="/regolamenti/Regolamento_Sportivo_2025_v_22.10.24.pdf" download className="download-card">
+              <FileText size={20} color="var(--accent-color)" /><div style={{ flex: 1 }}><strong>Regolamento Sportivo FITDS</strong><div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Aggiornamento 2025</div></div><Download size={18} />
+           </a>
+           <a href="/regolamenti/Appendici_2025_con_quote.pdf" download className="download-card">
+              <FileText size={20} color="var(--accent-color)" /><div style={{ flex: 1 }}><strong>Appendici e Dimensioni (2025)</strong><div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Quote Sagome e Dimensioni IPSC</div></div><Download size={18} />
+           </a>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'rules'} onClose={() => setActiveModal(null)} title="Sintesi dei Regolamenti IPSC / FITDS" maxWidth="750px">
+        <div style={{ maxHeight: '72vh', overflowY: 'auto', paddingRight: '12px' }}>
+          <p style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>L'IPSC e la FITDS pongono la <strong>Sicurezza Incondizionata</strong> al di sopra di tutto. Abbiamo estratto e condensato dai ponderosi manuali in PDF i dogmi imprescindibili che ogni tiratore agonista deve seguire in pedana.</p>
+
+          <h3 style={{ fontSize: '16px', color: 'var(--danger-color)', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>1. Sicurezza Assoluta (Match DQ Immediato)</h3>
+          <ul style={{ paddingLeft: '20px', marginBottom: '20px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <li><strong>Regola dei 180°:</strong> Durante l'intero stage, l'arma (carica o scarica) non deve <em>mai</em> puntare oltre la linea immaginaria dei 180 gradi frontale. Ruotare troppo l'arma verso i lati o indietro, equivale all'espulsione immediata dalla Gara (DQ).</li>
+            <li><strong>Trigger Finger:</strong> Il dito DEVE essere tenuto visibilmente dritto e fuori dal ponticello durante qualsiasi movimento in cui non si sta mirando ai bersagli, incluso tutto il tragitto durante il cambio caricatore (Reload) o lo sblocco inceppamenti.</li>
+            <li><strong>Sweeping / Dropped Gun:</strong> Puntare maldestramente l'arma contro la propria mano o il proprio corpo durante un'operazione, oppure far cadere l'arma dalla fondina a terra, risulta in squalifica senza appello.</li>
+          </ul>
+
+          <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>2. Dinamica di Gara & L'Occhio del Range Officer</h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>I comandi sulla linea di tiro sono universali e impartiti in inglese:</p>
+          <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '12px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            <div><strong style={{ color: 'var(--accent-color)' }}>"Make Ready"</strong>: L'unico momento in cui puoi sfoderare. Prendi posizione, carichi, metti sicura e rimetti in fondina.</div>
+            <div><strong style={{ color: 'var(--accent-color)' }}>"Are you Ready? ... Standby"</strong>: Nessuna risposta significa assenso. Il timer suonerà dal range di 1 a 4 secondi dal comando Standby!</div>
+            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border-color)' }}><strong style={{ color: 'var(--accent-color)' }}>"If you are finished, unload and show clear"</strong>: A fine percorso asporti il caricatore forzatamente, apri il carrello ed esibisci la canna vuota al Giudice (RO).</div>
+            <div><strong style={{ color: 'var(--accent-color)' }}>"If clear, hammer down, holster"</strong>: Punti verso la terra in direzione sicura, chiudi il carrello, premo il grilletto a vuoto (per provare inoppugnabilmente che è scarica) per poi riporla.</div>
+            <div><strong style={{ color: 'var(--accent-color)' }}>"Range is clear"</strong>: L'arma è in fodero. Adesso i colleghi possono sorpassare la linea per tappare e conteggiare con te i punti.</div>
+          </div>
+
+          <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>3. Area e Condizioni di Gioco</h3>
+          <ul style={{ paddingLeft: '20px', marginBottom: '16px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <li><strong>Le "Fault Lines":</strong> I limiti a terra del campo di tiro. Mettere un piede e pesare fuori dal campo mentre si spara comporta penalità multiple dolorose di -10 punti per ogni errore procedurale.</li>
+            <li><strong>Written Stage Briefing (WSB):</strong> Le regole del gioco per quella specifica sfida. Non si discute: se viene imposta una ricarica obbligatoria passando attraverso un pertugio, non conta nessun'altra logica!</li>
+          </ul>
         </div>
       </Modal>
 
