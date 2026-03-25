@@ -1,0 +1,292 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import HitCounter from './components/HitCounter';
+import Modal from './components/Modal';
+import { calculateHitFactor } from './utils/scoring';
+import { Timer, RefreshCcw, Activity, Info, Sun, Moon } from 'lucide-react';
+
+function App() {
+  const [isMajor, setIsMajor] = useState(false);
+  const [time, setTime] = useState('');
+  const [hits, setHits] = useState({
+    A: 0, C: 0, D: 0, M: 0, NS: 0, PROC: 0
+  });
+
+  const [activeModal, setActiveModal] = useState(null);
+
+  // Theme Management
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) return savedTheme;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleHitChange = (key, value) => {
+    setHits(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleReset = () => {
+    setHits({ A: 0, C: 0, D: 0, M: 0, NS: 0, PROC: 0 });
+    setTime('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const result = useMemo(() => {
+    return calculateHitFactor(hits, time || 0, isMajor);
+  }, [hits, time, isMajor]);
+
+  return (
+    <div style={{ width: '100%' }}>
+      {/* HEADER */}
+      <header style={{ textAlign: 'center', marginBottom: '24px', paddingTop: '24px', position: 'relative' }}>
+        <button 
+          onClick={toggleTheme} 
+          style={{ position: 'absolute', right: '16px', top: '12px', padding: '8px', color: 'var(--text-secondary)' }}
+          aria-label="Toggle Tema"
+        >
+          {theme === 'dark' ? <Sun size={26} strokeWidth={2.5} /> : <Moon size={26} strokeWidth={2.5} />}
+        </button>
+
+        <div className="flex-center" style={{ gap: '12px', marginBottom: '8px' }}>
+          <img src="/icon.svg" alt="IPSC Logo" width="40" height="40" style={{ borderRadius: '10px', boxShadow: 'var(--shadow-md)' }} />
+          <h1 style={{ fontSize: '36px', letterSpacing: '-0.8px' }}>IPSC Score</h1>
+        </div>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 600 }}>
+          Hit Factor Calculator
+        </p>
+      </header>
+
+      {/* CORE LAYOUT */}
+      <div className="app-grid">
+        
+        {/* COLONNA SINISTRA (Hits / Penalties) */}
+        <div className="grid-left" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          
+          <h2 style={{ 
+            fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', 
+            color: 'var(--text-secondary)', margin: '0 0 4px 16px', display: 'flex', alignItems: 'center', gap: '8px'
+          }}>
+            Hits
+            <button onClick={() => setActiveModal('hits')} aria-label="Info Hits" style={{ color: 'var(--accent-color)' }}><Info size={16} /></button>
+          </h2>
+          <div className="card" style={{ padding: '8px 24px' }}>
+            <HitCounter label="Alpha (A)" description="5 Points" value={hits.A} onChange={(val) => handleHitChange('A', val)} colorVar="--accent-color" />
+            <HitCounter label="Charlie (C)" description={isMajor ? "4 Points" : "3 Points"} value={hits.C} onChange={(val) => handleHitChange('C', val)} />
+            <HitCounter label="Delta (D)" description={isMajor ? "2 Points" : "1 Point"} value={hits.D} onChange={(val) => handleHitChange('D', val)} isLast={true} />
+          </div>
+
+          <h2 style={{ 
+            fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', 
+            color: 'var(--text-secondary)', margin: '16px 0 4px 16px', display: 'flex', alignItems: 'center', gap: '8px'
+          }}>
+            Penalties
+            <button onClick={() => setActiveModal('penalties')} aria-label="Info Penalità" style={{ color: 'var(--accent-color)' }}><Info size={16} /></button>
+          </h2>
+          <div className="card" style={{ padding: '8px 24px', marginBottom: '0' }}>
+            <HitCounter label="Miss (M)" description="-10 Points" value={hits.M} onChange={(val) => handleHitChange('M', val)} colorVar="--danger-color" />
+            <HitCounter label="No-Shoot (NS)" description="-10 Points" value={hits.NS} onChange={(val) => handleHitChange('NS', val)} colorVar="--danger-color" />
+            <HitCounter label="Procedural" description="-10 Points" value={hits.PROC} onChange={(val) => handleHitChange('PROC', val)} colorVar="--danger-color" isLast={true} />
+          </div>
+        </div>
+
+        {/* COLONNA DESTRA (Stato, Tempo, Setup O Bottom in Mobile) */}
+        <div className="grid-right">
+          
+          {/* RESULT CARD: MOSTATA SOLO SU DESKTOP (Su Mobile c'è la Bottom Bar) */}
+          <div className="card desktop-only" style={{ marginBottom: '0', border: '2px solid var(--border-color)', transform: 'scale(1.02)' }}>
+            <div className="flex-between">
+              <div>
+                <span onClick={() => setActiveModal('hitfactor')} style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  Hit Factor <Info size={14} color="var(--accent-color)" />
+                </span>
+                <div style={{ fontSize: '56px', fontWeight: '800', lineHeight: 1, color: 'var(--accent-color)', marginTop: '8px' }}>
+                  {result.hitFactor.toFixed(4)}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Punti: <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '18px' }}>{result.stageScore}</span></div>
+                {result.totalPenalties > 0 && <div style={{ fontSize: '15px', color: 'var(--danger-color)', fontWeight: 600 }}>Penalità: -{result.totalPenalties}</div>}
+              </div>
+            </div>
+          </div>
+
+          {/* CONFIG CARD */}
+          <div className="card" style={{ marginBottom: '0' }}>
+            <div className="flex-between" style={{ marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Activity size={22} color="var(--text-secondary)" /> Power Factor
+                <button onClick={() => setActiveModal('powerfactor')} style={{ color: 'var(--accent-color)' }}><Info size={18} /></button>
+              </h2>
+              <div style={{ display: 'flex', backgroundColor: 'var(--bg-color)', borderRadius: '10px', padding: '4px' }}>
+                <button onClick={() => setIsMajor(false)} style={{ padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: !isMajor ? 'var(--card-bg)' : 'transparent', color: !isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: !isMajor ? 'var(--shadow-sm)' : 'none' }}>
+                  Minor
+                </button>
+                <button onClick={() => setIsMajor(true)} style={{ padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: isMajor ? 'var(--card-bg)' : 'transparent', color: isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: isMajor ? 'var(--shadow-sm)' : 'none' }}>
+                  Major
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '24px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                <Timer size={20} /> Tempo (Secondi)
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                placeholder="0.00"
+                style={{ width: '100%', padding: '20px', fontSize: '28px', fontWeight: '700', textAlign: 'center' }}
+              />
+            </div>
+          </div>
+
+          {/* RESET DESKTOP ONLY (Su mobile il reset è nella bottom bar) */}
+          <button className="desktop-only" onClick={handleReset} style={{ width: '100%', padding: '16px', color: 'var(--danger-color)', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+            <RefreshCcw size={20} /> Reset Stage
+          </button>
+        </div>
+      </div>
+
+      {/* MOBILE FIXED BOTTOM ACTION BAR */}
+      <div className="mobile-only mobile-bottom-bar">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} onClick={() => setActiveModal('hitfactor')}>
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            Hit Factor <Info size={12} color="var(--accent-color)"/>
+          </span>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-color)', lineHeight: 1 }}>
+            {result.hitFactor.toFixed(4)}
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: result.totalPenalties > 0 ? 'var(--danger-color)' : 'var(--text-secondary)' }}>
+            Punti: {result.stageScore} {result.totalPenalties > 0 && `(Pen: -${result.totalPenalties})`}
+          </span>
+        </div>
+        
+        <button 
+          onClick={handleReset} 
+          style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--danger-color)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(255, 59, 48, 0.4)', transition: 'transform 0.2s' }}
+          aria-label="Reset Stage"
+        >
+          <RefreshCcw size={24} strokeWidth={2.5} />
+        </button>
+      </div>
+
+      {/* MODALS */}
+      <Modal isOpen={activeModal === 'hitfactor'} onClose={() => setActiveModal(null)} title="Che cos'è l'Hit Factor?" maxWidth="600px">
+        <p style={{ marginBottom: '12px' }}>Nel Tiro Dinamico Sportivo (IPSC), l'obiettivo è incarnare il motto latino <em>"Diligentia, Vis, Celeritas"</em> (Precisione, Potenza, Velocità). L'<strong>Hit Factor (HF)</strong> è la formula matematica che bilancia magicamente questi tre elementi.</p>
+        <p style={{ marginBottom: '16px' }}>In parole povere, l'Hit Factor indica <strong>quanti punti netti riesci a segnare per ogni secondo</strong> che passa.</p>
+        <div style={{ padding: '16px', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', margin: '16px 0', textAlign: 'center' }}>
+          <span style={{ fontWeight: 700, fontSize: '16px', color: 'var(--accent-color)' }}>HF</span> = (Totale Punti Bersagli - Penalità) / Tempo Impiegato
+        </div>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>Il calcolo premia chi trova il bilanciamento perfetto: essere ultra-veloci ma mancare i bersagli porta a un HF pessimo. D'altro canto, prendersi mire lunghissime per fare "Alfa" fa salire il tempo a dismisura, abbattendo l'HF. Nelle competizioni, l'Hit Factor più alto nello stage prende il 100% dei punti disponibili.</p>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'powerfactor'} onClose={() => setActiveModal(null)} title="Major vs Minor & Ricarica" maxWidth="750px">
+        <div style={{ maxHeight: '72vh', overflowY: 'auto', paddingRight: '12px' }}>
+          <p style={{ marginBottom: '16px' }}>Il <strong>Power Factor</strong> (Fattore di Potenza) detta i punti delle zone esterne ed è dedotto dalle munizioni. La formula IPSC ufficiale è:</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', margin: '24px auto', padding: '24px', backgroundColor: 'var(--bg-color)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.03)'}}>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--accent-color)' }}>PF</div>
+            <div style={{ fontSize: '24px', fontWeight: 500, color: 'var(--text-secondary)' }}>=</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ padding: '0 16px 12px 16px', borderBottom: '2.5px solid var(--text-primary)', fontSize: '18px', fontWeight: 600, letterSpacing: '-0.3px', textAlign: 'center' }}>
+                Peso Palla <span style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 500 }}>(grs)</span> 
+                <span style={{ color: 'var(--accent-color)', margin: '0 8px', fontSize: '20px' }}>×</span> 
+                Velocità <span style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 500 }}>(fps)</span>
+              </div>
+              <div style={{ padding: '12px 16px 0 16px', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>1000</div>
+            </div>
+          </div>
+          <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+            <li><strong>Major (Min. PF 160 o 170):</strong> C = 4 pti, D = 2 pti.</li>
+            <li><strong>Minor (Min. PF 125):</strong> C = 3 pti, D = 1 pto.</li>
+          </ul>
+          <h4 style={{ fontSize: '16px', color: 'var(--text-primary)', marginTop: '24px', marginBottom: '8px' }}>Esempi di Ricarica (Puramente Indicativi*)</h4>
+          <p style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--text-secondary)' }}>Questi test standardizzati su <strong>canne IPSC da 5"</strong> restituiscono i seguenti profili di caricamento.</p>
+          <div style={{ overflowX: 'auto', marginBottom: '16px', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+            <table style={{ width: '100%', fontSize: '13.5px', textAlign: 'left', borderCollapse: 'collapse', minWidth: '450px', background: 'var(--card-bg)' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-color)' }}>
+                  <th style={{ padding: '10px 12px' }}>Calibro (PF)</th><th style={{ padding: '10px 12px' }}>Palla</th><th style={{ padding: '10px 12px' }}>Polvere (Vivace/Lente)</th><th style={{ padding: '10px 12px' }}>G. Polvere</th><th style={{ padding: '10px 12px' }}>OAL Tondo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>9x19/21 (Minor)</td><td style={{ padding: '10px 12px' }}>124 gr</td><td style={{ padding: '10px 12px' }}>es. VN320 / BA9</td><td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--accent-color)' }}>~ 4.0 - 4.2 gr</td><td style={{ padding: '10px 12px' }}>29.0 mm</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>9x19/21 (Minor)</td><td style={{ padding: '10px 12px' }}>147 gr</td><td style={{ padding: '10px 12px' }}>es. VN320 / CSB1</td><td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--accent-color)' }}>~ 3.2 - 3.4 gr</td><td style={{ padding: '10px 12px' }}>29.5 mm</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>.40 S&W (Major)</td><td style={{ padding: '10px 12px' }}>180 gr</td><td style={{ padding: '10px 12px' }}>es. VN320 / VV340</td><td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--accent-color)' }}>~ 4.8 - 5.0 gr</td><td style={{ padding: '10px 12px' }}>28.5 mm</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>.38 Sup. (Major)</td><td style={{ padding: '10px 12px' }}>124 gr</td><td style={{ padding: '10px 12px' }}>es. 3N38 / VN350</td><td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--accent-color)' }}>~ 7.6+ gr</td><td style={{ padding: '10px 12px' }}>31.5 mm</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>.45 ACP (Major)</td><td style={{ padding: '10px 12px' }}>230 gr</td><td style={{ padding: '10px 12px' }}>es. VN320 / BA10</td><td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--accent-color)' }}>~ 4.5 - 5.0 gr</td><td style={{ padding: '10px 12px' }}>32.0 mm</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>.38 Spc (Rev)</td><td style={{ padding: '10px 12px' }}>158 gr</td><td style={{ padding: '10px 12px' }}>es. VN320 / N330</td><td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--accent-color)' }}>~ 4.2 - 4.5 gr</td><td style={{ padding: '10px 12px' }}>Cilindro</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--danger-color)', backgroundColor: 'rgba(255, 59, 48, 0.08)', padding: '12px', borderRadius: '8px', borderLeft: '4px solid var(--danger-color)' }}>
+            <strong>*AVVERTENZA DI SICUREZZA:</strong> Le dosi in tabella sono stime puramente divulgative. Pressioni in camera disastrose possono essere generate se l'OAL (Lunghezza finita del tondo) è troppo corto per il tipo di palla o polvere! Ricaricate sempre seguendo pedissequamente i <strong>manuali ufficiali dei vari produttori</strong>.
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'hits'} onClose={() => setActiveModal(null)} title="I Bersagli e i Punti (Hits)" maxWidth="600px">
+        <p style={{ marginBottom: '12px' }}>In IPSC si spara a bersagli di cartone sagomato e a piastre metalliche abbattibili (che valgono sempre 5 punti netti). I bersagli di cartone possiedono <strong>zone di precisione invisibili</strong> a distanza, e ogni stage richiede solitamente di colpirli con <strong>due colpi</strong>.</p>
+        <div style={{ padding: '20px', background: 'var(--bg-color)', borderRadius: '12px', marginTop: '16px', gap: '16px', display: 'flex', flexDirection: 'column' }}>
+          <div>
+            <strong style={{ color: 'var(--accent-color)', fontSize: '16px' }}>Alfa (A) - Zona Centrale:</strong>
+            <p style={{ marginTop: '4px', fontSize: '14px', color: 'var(--text-secondary)' }}>È il "cuore" del bersaglio. Rappresenta un colpo piazzato perfettamente e vale sempre <strong>5 Punti</strong> per tutte le classi di potenza.</p>
+          </div>
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            <strong style={{ color: 'var(--text-primary)', fontSize: '16px' }}>Charlie (C) - Zona Media:</strong>
+            <p style={{ marginTop: '4px', fontSize: '14px', color: 'var(--text-secondary)' }}>Un colpo leggermente fuori centro. Inizia a pesare in base al calibro: vale <strong>4 Punti</strong> per chi spara calibri "Major", ma solo <strong>3 Punti</strong> per le "Minor".</p>
+          </div>
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            <strong style={{ color: 'var(--text-primary)', fontSize: '16px' }}>Delta (D) - Zona Periferica:</strong>
+            <p style={{ marginTop: '4px', fontSize: '14px', color: 'var(--text-secondary)' }}>Il colpo ha sfiorato i bordi del bersaglio. Costituisce solo <strong>2 Punti</strong> per le armi Major, e un misero <strong>1 Punto</strong> per le Minor!</p>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'penalties'} onClose={() => setActiveModal(null)} title="Le Penalità" maxWidth="600px">
+        <p style={{ marginBottom: '16px' }}>Nello sport dell'IPSC gli errori si pagano carissimi. Ogni singola penalità sottrae ben <strong>10 Punti</strong> dal totale del tuo stage (vanificando la fatica di 2 Alpha perfetti). Se le penalità superano i punti accumulati, il punteggio complessivo scende a zero.</p>
+        <div style={{ padding: '20px', background: 'rgba(255, 59, 48, 0.05)', borderRadius: '12px', borderLeft: '4px solid var(--danger-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <strong style={{ color: 'var(--danger-color)', fontSize: '16px' }}>Miss (M) - Bersaglio Mancato:</strong>
+            <p style={{ marginTop: '4px', fontSize: '14px', color: 'var(--text-secondary)' }}>Si assegna quando un bersaglio non riporta il numero di impatti minimi previsti dal briefing (es. dovevi mettere due colpi, ma ce n'è solo uno visibile).</p>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(255, 59, 48, 0.1)', paddingTop: '16px' }}>
+            <strong style={{ color: 'var(--danger-color)', fontSize: '16px' }}>No-Shoot (NS) - Ostaggio Colpito:</strong>
+            <p style={{ marginTop: '4px', fontSize: '14px', color: 'var(--text-secondary)' }}>Spesso nello stage sono presenti sagome "bianche" o con la X nera (Ostaggi / Hard Cover). Colpirli è severamente punito con una penalità per ogni buco effettuato su di loro.</p>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(255, 59, 48, 0.1)', paddingTop: '16px' }}>
+            <strong style={{ color: 'var(--danger-color)', fontSize: '16px' }}>Procedural - Infrazione Regolamentare:</strong>
+            <p style={{ marginTop: '4px', fontSize: '14px', color: 'var(--text-secondary)' }}>Assegnata dal Range Officer (Giudice) se il tiratore calpesta le linee esterne del campo (fault lines), esplode colpi col piede fuori area, o viola obblighi di percorso specifici del briefing.</p>
+          </div>
+        </div>
+      </Modal>
+
+    </div>
+  );
+}
+
+export default App;
