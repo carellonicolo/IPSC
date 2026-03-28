@@ -2,7 +2,22 @@ import React, { useState, useEffect, useMemo } from 'react';
 import HitCounter from './components/HitCounter';
 import Modal from './components/Modal';
 import { calculateHitFactor } from './utils/scoring';
-import { Timer, RefreshCcw, Activity, Info, Sun, Moon, BookOpen, Download, Github, LayoutGrid, FileText, Zap, Flame } from 'lucide-react';
+import { Timer, RefreshCcw, Activity, Info, Sun, Moon, BookOpen, Download, LayoutGrid, FileText, Zap, Flame } from 'lucide-react';
+
+const GithubIcon = ({ size = 24 }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+  </svg>
+);
 
 function App() {
   const [isMajor, setIsMajor] = useState(false);
@@ -12,6 +27,7 @@ function App() {
   });
 
   const [activeModal, setActiveModal] = useState(null);
+  const [rulesTab, setRulesTab] = useState('safety');
 
   // Theme Management
   const [theme, setTheme] = useState(() => {
@@ -80,7 +96,7 @@ function App() {
           {/* Dx - Esterni */}
           <div style={{ display: 'flex', gap: '8px' }}>
             <a href="https://github.com/nicolocarello/IPSC" target="_blank" rel="noopener noreferrer" className="toolbar-btn">
-              <Github size={16} /> Github
+              <GithubIcon size={16} /> Github
             </a>
             <a href="https://apps.nicolocarello.it" target="_blank" rel="noopener noreferrer" className="toolbar-btn">
               <LayoutGrid size={16} /> Altre Apps
@@ -176,7 +192,7 @@ function App() {
           </div>
 
           {/* RESET DESKTOP ONLY */}
-          <button className="desktop-only" onClick={handleReset} style={{ width: '100%', padding: '16px', color: 'var(--danger-color)', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justify_content: 'center', gap: '10px', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+          <button className="desktop-only" onClick={handleReset} style={{ width: '100%', padding: '16px', color: 'var(--danger-color)', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
             <RefreshCcw size={20} /> Reset Stage
           </button>
         </div>
@@ -325,32 +341,144 @@ function App() {
         </div>
       </Modal>
 
-      <Modal isOpen={activeModal === 'rules'} onClose={() => setActiveModal(null)} title="Sintesi dei Regolamenti IPSC / FITDS" maxWidth="750px">
+      <Modal isOpen={activeModal === 'rules'} onClose={() => setActiveModal(null)} title="Manuale Tecnico IPSC / FITDS (Ed. 2024-2026)" maxWidth="950px">
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
+          <button onClick={() => setRulesTab('safety')} style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', backgroundColor: rulesTab === 'safety' ? 'var(--accent-color)' : 'var(--bg-color)', color: rulesTab === 'safety' ? '#FFF' : 'var(--text-secondary)', transition: 'var(--transition)', border: 'none', cursor: 'pointer' }}>Sicurezza & DQ</button>
+          <button onClick={() => setRulesTab('divisions')} style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', backgroundColor: rulesTab === 'divisions' ? 'var(--accent-color)' : 'var(--bg-color)', color: rulesTab === 'divisions' ? '#FFF' : 'var(--text-secondary)', transition: 'var(--transition)', border: 'none', cursor: 'pointer' }}>Divisioni Dettagliate</button>
+          <button onClick={() => setRulesTab('equipment')} style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', backgroundColor: rulesTab === 'equipment' ? 'var(--accent-color)' : 'var(--bg-color)', color: rulesTab === 'equipment' ? '#FFF' : 'var(--text-secondary)', transition: 'var(--transition)', border: 'none', cursor: 'pointer' }}>Equipaggiamento</button>
+          <button onClick={() => setRulesTab('scoring')} style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', backgroundColor: rulesTab === 'scoring' ? 'var(--accent-color)' : 'var(--bg-color)', color: rulesTab === 'scoring' ? '#FFF' : 'var(--text-secondary)', transition: 'var(--transition)', border: 'none', cursor: 'pointer' }}>Target & Punti</button>
+          <button onClick={() => setRulesTab('procedure')} style={{ padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', backgroundColor: rulesTab === 'procedure' ? 'var(--accent-color)' : 'var(--bg-color)', color: rulesTab === 'procedure' ? '#FFF' : 'var(--text-secondary)', transition: 'var(--transition)', border: 'none', cursor: 'pointer' }}>Procedure & RO</button>
+        </div>
+
         <div style={{ maxHeight: '72vh', overflowY: 'auto', paddingRight: '12px' }}>
-          <p style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>L'IPSC e la FITDS pongono la <strong>Sicurezza Incondizionata</strong> al di sopra di tutto. Abbiamo estratto e condensato dai ponderosi manuali in PDF i dogmi imprescindibili che ogni tiratore agonista deve seguire in pedana.</p>
+          {rulesTab === 'safety' && (
+            <div className="fade-in">
+              <h3 style={{ color: 'var(--danger-color)', marginBottom: '16px', fontSize: '18px' }}>Capitolo 10: Sicurezza Generale e Match DQ</h3>
+              <p style={{ fontSize: '14px', marginBottom: '20px', color: 'var(--text-secondary)' }}>La squalifica dal match (DQ) comporta l'immediata cessazione della partecipazione a tutti gli stage rimanenti. Non è appellabile se basata su violazioni fisiche della sicurezza.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                <div style={{ padding: '20px', background: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '15px', color: 'var(--danger-color)', marginBottom: '10px' }}>Violazioni dei 180 Gradi (Regola 10.5.2)</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>L'arma (carica o scarica) non deve mai puntare "dietro" rispetto alla linea mediana dello stage. Durante la ricarica o la risoluzione di un inceppamento, la bocca della canna deve restare orientata entro i limiti sicuri.</p>
+                </div>
+                <div style={{ padding: '20px', background: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '15px', color: 'var(--danger-color)', marginBottom: '10px' }}>Maneggiamento Insicuro e Sweeping</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}><strong>Sweeping:</strong> Puntare la bocca della canna verso qualsiasi parte del proprio corpo. <strong>Dropped Gun:</strong> Far cadere l'arma in qualsiasi momento (anche scarica). <strong>Dito nel ponticello:</strong> Durante il movimento o la ricarica.</p>
+                </div>
+                <div style={{ padding: '20px', background: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '15px', color: 'var(--danger-color)', marginBottom: '10px' }}>Alcool e Comportamento Antisportivo</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>L'uso di sostanze che alterano la concentrazione comporta l'espulsione. Urla o imprecazioni violente verso gli arbitri portano a DQ per condotta antisportiva.</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <h3 style={{ fontSize: '16px', color: 'var(--danger-color)', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>1. Sicurezza Assoluta (Match DQ Immediato)</h3>
-          <ul style={{ paddingLeft: '20px', marginBottom: '20px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <li><strong>Regola dei 180°:</strong> Durante l'intero stage, l'arma (carica o scarica) non deve <em>mai</em> puntare oltre la linea immaginaria dei 180 gradi frontale. Ruotare troppo l'arma verso i lati o indietro, equivale all'espulsione immediata dalla Gara (DQ).</li>
-            <li><strong>Trigger Finger:</strong> Il dito DEVE essere tenuto visibilmente dritto e fuori dal ponticello durante qualsiasi movimento in cui non si sta mirando ai bersagli, incluso tutto il tragitto durante il cambio caricatore (Reload) o lo sblocco inceppamenti.</li>
-            <li><strong>Sweeping / Dropped Gun:</strong> Puntare maldestramente l'arma contro la propria mano o il proprio corpo durante un'operazione, oppure far cadere l'arma dalla fondina a terra, risulta in squalifica senza appello.</li>
-          </ul>
+          {rulesTab === 'divisions' && (
+            <div className="fade-in">
+              <h3 style={{ color: 'var(--accent-color)', marginBottom: '16px', fontSize: '18px' }}>Analisi Tecnica Divisioni (Appendici D1-D5)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ background: 'var(--bg-color)', padding: '20px', borderRadius: '12px' }}>
+                  <h4 style={{ fontSize: '15px', marginBottom: '12px' }}>Standard Division (Appendice D2)</h4>
+                  <ul style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <li><strong>Scatola IPSC:</strong> L'arma con caricatore inserito deve entrare nella scatola (225 x 150 x 45 mm).</li>
+                    <li><strong>Modifiche:</strong> Minigonne e organi di mira ammessi.</li>
+                    <li><strong>Proibiti:</strong> Compensatori, fori di sfiato (porting) e ottiche elettroniche portate sul carrello.</li>
+                  </ul>
+                </div>
+                <div style={{ background: 'var(--bg-color)', padding: '20px', borderRadius: '12px' }}>
+                  <h4 style={{ fontSize: '15px', marginBottom: '12px' }}>Production Division (Appendice D4)</h4>
+                  <ul style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <li><strong>Lista Ufficiale:</strong> Solo armi approvate dalla "Production Division List".</li>
+                    <li><strong>Peso Scatto:</strong> Minimo 2.27kg (5 lbs) per il primo colpo (doppia azione).</li>
+                    <li><strong>Note:</strong> Vietata la Singola Azione pura (SAO) tipo 1911.</li>
+                  </ul>
+                </div>
+                <div style={{ background: 'var(--bg-color)', padding: '20px', borderRadius: '12px' }}>
+                  <h4 style={{ fontSize: '15px', marginBottom: '12px' }}>Open Division (Appendice D1)</h4>
+                  <ul style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <li><strong>Caricatori:</strong> Lunghezza massima 170 mm (misurati sul retro).</li>
+                    <li><strong>Libertà:</strong> Uso di Red Dot, compensatori e percussori ultra-veloci ammesso.</li>
+                    <li><strong>Fattore:</strong> Caricamento Major concesso per 9mm con PF minimo 160.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>2. Dinamica di Gara & L'Occhio del Range Officer</h3>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>I comandi sulla linea di tiro sono universali e impartiti in inglese:</p>
-          <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '12px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-            <div><strong style={{ color: 'var(--accent-color)' }}>"Make Ready"</strong>: L'unico momento in cui puoi sfoderare. Prendi posizione, carichi, metti sicura e rimetti in fondina.</div>
-            <div><strong style={{ color: 'var(--accent-color)' }}>"Are you Ready? ... Standby"</strong>: Nessuna risposta significa assenso. Il timer suonerà dal range di 1 a 4 secondi dal comando Standby!</div>
-            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border-color)' }}><strong style={{ color: 'var(--accent-color)' }}>"If you are finished, unload and show clear"</strong>: A fine percorso asporti il caricatore forzatamente, apri il carrello ed esibisci la canna vuota al Giudice (RO).</div>
-            <div><strong style={{ color: 'var(--accent-color)' }}>"If clear, hammer down, holster"</strong>: Punti verso la terra in direzione sicura, chiudi il carrello, premo il grilletto a vuoto (per provare inoppugnabilmente che è scarica) per poi riporla.</div>
-            <div><strong style={{ color: 'var(--accent-color)' }}>"Range is clear"</strong>: L'arma è in fodero. Adesso i colleghi possono sorpassare la linea per tappare e conteggiare con te i punti.</div>
-          </div>
+          {rulesTab === 'equipment' && (
+            <div className="fade-in">
+              <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px', fontSize: '18px' }}>Cinturoni, Fondine e Accessori (Capitolo 5)</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '15px', marginBottom: '10px' }}>Regola dei 50mm</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>La distanza tra il fusto dell'arma e la faccia interna del cinturone non deve superare i **50 mm**.</p>
+                </div>
+                <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '15px', marginBottom: '10px' }}>Posizione della Fondina</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>In Production e Standard, l'arma deve essere portata dietro l'osso dell'anca.</p>
+                </div>
+                <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '15px', marginBottom: '10px' }}>Ritenzione</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>L'arma deve restare nella fondina durante i movimenti dinamici dello stage (scatti, salti).</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>3. Area e Condizioni di Gioco</h3>
-          <ul style={{ paddingLeft: '20px', marginBottom: '16px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <li><strong>Le "Fault Lines":</strong> I limiti a terra del campo di tiro. Mettere un piede e pesare fuori dal campo mentre si spara comporta penalità multiple dolorose di -10 punti per ogni errore procedurale.</li>
-            <li><strong>Written Stage Briefing (WSB):</strong> Le regole del gioco per quella specifica sfida. Non si discute: se viene imposta una ricarica obbligatoria passando attraverso un pertugio, non conta nessun'altra logica!</li>
-          </ul>
+          {rulesTab === 'scoring' && (
+            <div className="fade-in">
+              <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>Tabella Target e Metodi di Calcolo</h3>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '12px', marginBottom: '24px' }}>
+                <table style={{ width: '100%', fontSize: '13px', textAlign: 'left', borderCollapse: 'collapse', minWidth: '600px' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-color)', borderBottom: '2.5px solid var(--border-color)' }}>
+                      <th style={{ padding: '12px' }}>Bersaglio</th><th style={{ padding: '12px' }}>Zona A</th><th style={{ padding: '12px' }}>Zona C (M/m)</th><th style={{ padding: '12px' }}>Zona D (M/m)</th><th style={{ padding: '12px' }}>Miss</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px' }}><strong>IPSC Universal</strong></td><td style={{ padding: '12px' }}>5 pti</td><td style={{ padding: '12px' }}>4 / 3 pti</td><td style={{ padding: '12px' }}>2 / 1 pti</td><td style={{ padding: '12px' }}>-10 pti</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px' }}><strong>IPSC Mini</strong></td><td style={{ padding: '12px' }}>5 pti</td><td style={{ padding: '12px' }}>4 / 3 pti</td><td style={{ padding: '12px' }}>2 / 1 pti</td><td style={{ padding: '12px' }}>-10 pti</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '12px' }}><strong>Piastre / Poppers</strong></td><td style={{ padding: '12px' }}>5 pti</td><td style={{ padding: '12px' }}>-</td><td style={{ padding: '12px' }}>-</td><td style={{ padding: '12px' }}>-10 pti</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ background: 'var(--bg-color)', padding: '20px', borderRadius: '12px' }}>
+                  <h4 style={{ fontSize: '15px', color: 'var(--accent-color)', marginBottom: '8px' }}>Procedurali Speciali</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}><strong>Double Procedural:</strong> Guadagno di un vantaggio significativo. <strong>Creeping:</strong> Muoversi prima del segnale Start Signal.</p>
+                </div>
+                <div style={{ background: 'var(--bg-color)', padding: '20px', borderRadius: '12px' }}>
+                  <h4 style={{ fontSize: '15px', color: 'var(--accent-color)', marginBottom: '8px' }}>No-Shoot</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Il No-Shoot conta al massimo due colpi per bersaglio ai fini della sottrazione punti.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {rulesTab === 'procedure' && (
+            <div className="fade-in">
+              <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>Ispezione e Comandi Ufficiali (Regola 8.3)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ background: 'var(--bg-color)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, auto) 1fr', gap: '12px', fontSize: '13px' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--accent-color)' }}>"Make Ready"</div><div style={{ color: 'var(--text-secondary)' }}>Tiratore prepara l'arma secondo il briefing.</div>
+                    <div style={{ fontWeight: 700, color: 'var(--accent-color)' }}>"Standby"</div><div style={{ color: 'var(--text-secondary)' }}>Il segnale acustico suonerà da 1 a 4 secondi dopo.</div>
+                    <div style={{ fontWeight: 700, color: 'var(--accent-color)' }}>"Stop!"</div><div style={{ color: 'var(--text-secondary)' }}>Cessare immediatamente il fuoco e restare immobile.</div>
+                    <div style={{ fontWeight: 700, color: 'var(--accent-color)' }}>"Range is Clear"</div><div style={{ color: 'var(--text-secondary)' }}>Ispezione e ripristino bersagli autorizzati.</div>
+                  </div>
+                </div>
+                <div style={{ background: 'var(--bg-color)', padding: '20px', borderRadius: '12px' }}>
+                  <h4 style={{ fontSize: '15px', marginBottom: '8px' }}>Ispezione Bersagli</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Se il tiratore tocca il bersaglio prima che sia stato formalizzato il punteggio, non può sollevare contestazioni.</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 
