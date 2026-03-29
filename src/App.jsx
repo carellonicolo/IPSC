@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import HitCounter from './components/HitCounter';
 import Modal from './components/Modal';
 import { calculateHitFactor } from './utils/scoring';
-import { Timer, RefreshCcw, Activity, Info, Sun, Moon, BookOpen, Download, LayoutGrid, FileText, Zap, Flame } from 'lucide-react';
+import { Timer, RefreshCcw, Activity, Info, Sun, Moon, BookOpen, Download, LayoutGrid, FileText, Zap, Flame, Crosshair } from 'lucide-react';
+import ChronoCheck from './components/ChronoCheck';
 
 const GithubIcon = ({ size = 24 }) => (
   <svg 
@@ -28,6 +29,7 @@ function App() {
 
   const [activeModal, setActiveModal] = useState(null);
   const [rulesTab, setRulesTab] = useState('safety');
+  const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono'
 
   // Theme Management
   const [theme, setTheme] = useState(() => {
@@ -82,8 +84,26 @@ function App() {
           Hit Factor Calculator
         </p>
 
+        {/* MAIN TAB SWITCHER */}
+        <div className="main-tab-container" style={{ maxWidth: '400px', margin: '20px auto 0 auto', padding: '0 16px' }}>
+          <div className="main-tab-switcher">
+            <button
+              onClick={() => setActiveTab('score')}
+              className={`main-tab-btn ${activeTab === 'score' ? 'main-tab-active' : ''}`}
+            >
+              <Activity size={18} /> Score Calculator
+            </button>
+            <button
+              onClick={() => setActiveTab('chrono')}
+              className={`main-tab-btn ${activeTab === 'chrono' ? 'main-tab-active' : ''}`}
+            >
+              <Crosshair size={18} /> Chrono Check
+            </button>
+          </div>
+        </div>
+
         {/* HEADER TOOLBAR LInks/Modals */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', maxWidth: '600px', margin: '20px auto 0 auto', padding: '0 16px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', maxWidth: '600px', margin: '16px auto 0 auto', padding: '0 16px' }}>
           {/* Sx - Regolamenti */}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setActiveModal('rules')} className="toolbar-btn">
@@ -106,7 +126,13 @@ function App() {
       </header>
 
       {/* CORE LAYOUT */}
-      <div className="app-grid">
+      {activeTab === 'chrono' && (
+        <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
+          <ChronoCheck />
+        </div>
+      )}
+
+      {activeTab === 'score' && <div className="app-grid fade-in">
         
         {/* COLONNA SINISTRA (Hits / Penalties) */}
         <div className="grid-left" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -143,24 +169,22 @@ function App() {
           
           {/* CONFIG CARD */}
           <div className="card" style={{ marginBottom: '0' }}>
-            <div className="flex-between" style={{ marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity size={22} color="var(--text-secondary)" /> Power Factor
-                <button onClick={() => setActiveModal('powerfactor')} style={{ color: 'var(--accent-color)' }}><Info size={18} /></button>
-              </h2>
-              <div style={{ display: 'flex', backgroundColor: 'var(--bg-color)', borderRadius: '10px', padding: '4px' }}>
-                <button onClick={() => setIsMajor(false)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: !isMajor ? 'var(--card-bg)' : 'transparent', color: !isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: !isMajor ? 'var(--shadow-sm)' : 'none', transition: 'var(--transition)' }}>
-                  <Zap size={16} /> Minor
-                </button>
-                <button onClick={() => setIsMajor(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: isMajor ? 'var(--card-bg)' : 'transparent', color: isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: isMajor ? 'var(--shadow-sm)' : 'none', transition: 'var(--transition)' }}>
-                  <Flame size={16} /> Major
-                </button>
-              </div>
+            <h2 style={{ fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Activity size={18} color="var(--text-secondary)" /> Power Factor
+              <button onClick={() => setActiveModal('powerfactor')} style={{ color: 'var(--accent-color)' }}><Info size={16} /></button>
+            </h2>
+            <div style={{ display: 'flex', backgroundColor: 'var(--bg-color)', borderRadius: '10px', padding: '4px', marginBottom: '20px' }}>
+              <button onClick={() => setIsMajor(false)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: !isMajor ? 'var(--card-bg)' : 'transparent', color: !isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: !isMajor ? 'var(--shadow-sm)' : 'none', transition: 'var(--transition)' }}>
+                <Zap size={16} /> Minor
+              </button>
+              <button onClick={() => setIsMajor(true)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '15px', backgroundColor: isMajor ? 'var(--card-bg)' : 'transparent', color: isMajor ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: isMajor ? 'var(--shadow-sm)' : 'none', transition: 'var(--transition)' }}>
+                <Flame size={16} /> Major
+              </button>
             </div>
 
-            <div style={{ marginTop: '24px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-secondary)' }}>
-                <Timer size={20} /> Tempo (Secondi)
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 600, marginBottom: '10px', color: 'var(--text-secondary)' }}>
+                <Timer size={18} /> Tempo (Secondi)
               </label>
               <input
                 type="number"
@@ -196,30 +220,32 @@ function App() {
             <RefreshCcw size={20} /> Reset Stage
           </button>
         </div>
-      </div>
+      </div>}
 
-      {/* MOBILE FIXED BOTTOM ACTION BAR */}
-      <div className="mobile-only mobile-bottom-bar">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} onClick={() => setActiveModal('hitfactor')}>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Hit Factor <Info size={12} color="var(--accent-color)"/>
-          </span>
-          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-color)', lineHeight: 1 }}>
-            {result.hitFactor.toFixed(4)}
+      {/* MOBILE FIXED BOTTOM ACTION BAR (solo nella tab Score) */}
+      {activeTab === 'score' && (
+        <div className="mobile-only mobile-bottom-bar">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }} onClick={() => setActiveModal('hitfactor')}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Hit Factor <Info size={12} color="var(--accent-color)"/>
+            </span>
+            <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-color)', lineHeight: 1 }}>
+              {result.hitFactor.toFixed(4)}
+            </div>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: result.totalPenalties > 0 ? 'var(--danger-color)' : 'var(--text-secondary)' }}>
+              Punti: {result.stageScore} {result.totalPenalties > 0 && `(Pen: -${result.totalPenalties})`}
+            </span>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: result.totalPenalties > 0 ? 'var(--danger-color)' : 'var(--text-secondary)' }}>
-            Punti: {result.stageScore} {result.totalPenalties > 0 && `(Pen: -${result.totalPenalties})`}
-          </span>
+
+          <button
+            onClick={handleReset}
+            style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--danger-color)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(255, 59, 48, 0.4)', transition: 'transform 0.2s' }}
+            aria-label="Reset Stage"
+          >
+            <RefreshCcw size={24} strokeWidth={2.5} />
+          </button>
         </div>
-        
-        <button 
-          onClick={handleReset} 
-          style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--danger-color)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(255, 59, 48, 0.4)', transition: 'transform 0.2s' }}
-          aria-label="Reset Stage"
-        >
-          <RefreshCcw size={24} strokeWidth={2.5} />
-        </button>
-      </div>
+      )}
 
       {/* MODALS */}
       <Modal isOpen={activeModal === 'hitfactor'} onClose={() => setActiveModal(null)} title="Che cos'è l'Hit Factor?" maxWidth="600px">

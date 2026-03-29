@@ -419,3 +419,82 @@ input:focus {
   from { opacity: 0; transform: translateY(30px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Main Tab Switcher */
+.main-tab-switcher {
+  display: flex;
+  background: var(--bg-color);
+  border-radius: 14px;
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.main-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+
+.main-tab-btn.main-tab-active {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+}
+
+@media (hover: hover) {
+  .main-tab-btn:not(.main-tab-active):hover {
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.03);
+  }
+}
+
+:root[data-theme='dark'] .main-tab-btn:not(.main-tab-active):hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Chrono Check Grid Layout */
+.chrono-grid {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 20px;
+}
+
+.chrono-left {
+  order: 1;
+}
+
+.chrono-right {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .chrono-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .chrono-left { order: 1; }
+  .chrono-right {
+    order: 2;
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    gap: 20px;
+  }
+}
