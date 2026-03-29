@@ -2,6 +2,78 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Crosshair, RotateCcw, Scale, CheckCircle2, XCircle, Info } from 'lucide-react';
 
 const GAUGE_MAX = 250;
+const gaugeRadius = 90;
+const gaugeStroke = 12;
+const centerX = 120;
+const centerY = 105;
+const startAngle = 225;
+const totalSweep = 270;
+const endAngle = startAngle - totalSweep;
+
+const polarToCartesian = (cx, cy, r, angleDeg) => {
+  const rad = (angleDeg * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+};
+
+const describeArc = (cx, cy, r, startA, endA) => {
+  const start = polarToCartesian(cx, cy, r, startA);
+  const end = polarToCartesian(cx, cy, r, endA);
+  const sweep = startA - endA;
+  const largeArc = sweep > 180 ? 1 : 0;
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+};
+
+const angleForValue = (val) => startAngle - (Math.min(val, GAUGE_MAX) / GAUGE_MAX) * totalSweep;
+
+const GaugeSVG = ({ currentResult }) => {
+  const pfValue = currentResult ? Math.min(currentResult.pf, GAUGE_MAX) : 0;
+  const ratio = pfValue / GAUGE_MAX;
+  const needleAngle = startAngle - ratio * totalSweep;
+  const needleEnd = polarToCartesian(centerX, centerY, gaugeRadius - 20, needleAngle);
+  const needleColor = currentResult ? currentResult.color : 'var(--text-secondary)';
+
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center',
+      background: currentResult ? currentResult.bgGlow : 'transparent',
+      borderRadius: '16px', padding: '4px 0', transition: 'background 0.4s ease'
+    }}>
+      <svg width="240" height="148" viewBox="0 0 240 148">
+        <path d={describeArc(centerX, centerY, gaugeRadius, startAngle, endAngle)} fill="none" stroke="var(--border-color)" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.4" />
+        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(0), angleForValue(125))} fill="none" stroke="#FF3B30" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
+        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(125), angleForValue(170))} fill="none" stroke="#FF9F0A" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
+        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(170), angleForValue(GAUGE_MAX))} fill="none" stroke="#34C759" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
+        {currentResult && (
+          <path d={describeArc(centerX, centerY, gaugeRadius, startAngle, needleAngle)} fill="none" stroke={currentResult.color} strokeWidth={gaugeStroke} strokeLinecap="round" style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+        )}
+        {[0, 125, 170, 250].map((val) => {
+          const a = angleForValue(val);
+          const outer = polarToCartesian(centerX, centerY, gaugeRadius + 8, a);
+          const inner = polarToCartesian(centerX, centerY, gaugeRadius + 2, a);
+          const labelPos = polarToCartesian(centerX, centerY, gaugeRadius + 18, a);
+          const isMajor = val === 125 || val === 170;
+          return (
+            <g key={val}>
+              <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke={isMajor ? 'var(--text-primary)' : 'var(--text-secondary)'} strokeWidth={isMajor ? 2 : 1} opacity={isMajor ? 0.8 : 0.4} />
+              <text x={labelPos.x} y={labelPos.y} textAnchor="middle" dominantBaseline="middle" fontSize="9" fontWeight={isMajor ? 700 : 500} fill={isMajor ? 'var(--text-primary)' : 'var(--text-secondary)'} opacity={isMajor ? 1 : 0.5}>{val}</text>
+            </g>
+          );
+        })}
+        <line x1={centerX} y1={centerY} x2={needleEnd.x} y2={needleEnd.y} stroke={needleColor} strokeWidth="2.5" strokeLinecap="round" style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+        <circle cx={centerX} cy={centerY} r="5" fill={needleColor} style={{ transition: 'fill 0.4s ease' }} />
+        <circle cx={centerX} cy={centerY} r="2.5" fill="var(--card-bg)" />
+        <text x={centerX} y={centerY + 26} textAnchor="middle" dominantBaseline="middle" fontSize="28" fontWeight="800" fill={currentResult ? currentResult.color : 'var(--text-secondary)'} style={{ transition: 'fill 0.4s ease' }}>
+          {currentResult ? currentResult.pf : '—'}
+        </text>
+        {currentResult && (
+          <text x={centerX} y={centerY + 46} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" letterSpacing="1.5" fill={currentResult.color}>
+            {currentResult.classification}
+          </text>
+        )}
+      </svg>
+    </div>
+  );
+};
 
 function classifyPF(pf) {
   if (pf >= 170) return { classification: 'MAJOR', color: '#34C759', bgGlow: 'rgba(52, 199, 89, 0.15)' };
@@ -25,8 +97,6 @@ function ChronoCheck() {
   const [velocities, setVelocities] = useState(['', '', '', '', '', '', '']);
   const [declaredPF, setDeclaredPF] = useState('major');
   const inputRefs = useRef([]);
-
-  const filledCount = velocities.filter(v => v !== '' && parseFloat(v) > 0).length;
 
   const results = useMemo(() => {
     const w = parseFloat(bulletWeight);
@@ -91,36 +161,6 @@ function ChronoCheck() {
   const showStep3 = results?.test2 && !results.test2.pass;
   const currentResult = results?.current;
 
-  // SVG Gauge
-  const gaugeRadius = 90;
-  const gaugeStroke = 12;
-  const centerX = 120;
-  const centerY = 105;
-  const startAngle = 225;
-  const totalSweep = 270;
-  const endAngle = startAngle - totalSweep;
-
-  const polarToCartesian = (cx, cy, r, angleDeg) => {
-    const rad = (angleDeg * Math.PI) / 180;
-    return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
-  };
-
-  const describeArc = (cx, cy, r, startA, endA) => {
-    const start = polarToCartesian(cx, cy, r, startA);
-    const end = polarToCartesian(cx, cy, r, endA);
-    const sweep = startA - endA;
-    const largeArc = sweep > 180 ? 1 : 0;
-    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
-  };
-
-  const angleForValue = (val) => startAngle - (Math.min(val, GAUGE_MAX) / GAUGE_MAX) * totalSweep;
-
-  const pfValue = currentResult ? Math.min(currentResult.pf, GAUGE_MAX) : 0;
-  const ratio = pfValue / GAUGE_MAX;
-  const needleAngle = startAngle - ratio * totalSweep;
-  const needleEnd = polarToCartesian(centerX, centerY, gaugeRadius - 20, needleAngle);
-  const needleColor = currentResult ? currentResult.color : 'var(--text-secondary)';
-
   // Stile input velocità
   const velInputStyle = (idx) => {
     const v = parseFloat(velocities[idx]);
@@ -169,49 +209,6 @@ function ChronoCheck() {
         <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '12px' }}>Media: {test.avg} fps</span>
       </div>
       <span style={{ fontWeight: 800, fontSize: '15px', color: test.color }}>PF {test.pf}</span>
-    </div>
-  );
-
-  // Componente Gauge SVG riutilizzabile
-  const GaugeSVG = () => (
-    <div style={{
-      display: 'flex', justifyContent: 'center',
-      background: currentResult ? currentResult.bgGlow : 'transparent',
-      borderRadius: '16px', padding: '4px 0', transition: 'background 0.4s ease'
-    }}>
-      <svg width="240" height="148" viewBox="0 0 240 148">
-        <path d={describeArc(centerX, centerY, gaugeRadius, startAngle, endAngle)} fill="none" stroke="var(--border-color)" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.4" />
-        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(0), angleForValue(125))} fill="none" stroke="#FF3B30" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
-        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(125), angleForValue(170))} fill="none" stroke="#FF9F0A" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
-        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(170), angleForValue(GAUGE_MAX))} fill="none" stroke="#34C759" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
-        {currentResult && (
-          <path d={describeArc(centerX, centerY, gaugeRadius, startAngle, needleAngle)} fill="none" stroke={currentResult.color} strokeWidth={gaugeStroke} strokeLinecap="round" style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }} />
-        )}
-        {[0, 125, 170, 250].map((val) => {
-          const a = angleForValue(val);
-          const outer = polarToCartesian(centerX, centerY, gaugeRadius + 8, a);
-          const inner = polarToCartesian(centerX, centerY, gaugeRadius + 2, a);
-          const labelPos = polarToCartesian(centerX, centerY, gaugeRadius + 18, a);
-          const isMajor = val === 125 || val === 170;
-          return (
-            <g key={val}>
-              <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke={isMajor ? 'var(--text-primary)' : 'var(--text-secondary)'} strokeWidth={isMajor ? 2 : 1} opacity={isMajor ? 0.8 : 0.4} />
-              <text x={labelPos.x} y={labelPos.y} textAnchor="middle" dominantBaseline="middle" fontSize="9" fontWeight={isMajor ? 700 : 500} fill={isMajor ? 'var(--text-primary)' : 'var(--text-secondary)'} opacity={isMajor ? 1 : 0.5}>{val}</text>
-            </g>
-          );
-        })}
-        <line x1={centerX} y1={centerY} x2={needleEnd.x} y2={needleEnd.y} stroke={needleColor} strokeWidth="2.5" strokeLinecap="round" style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }} />
-        <circle cx={centerX} cy={centerY} r="5" fill={needleColor} style={{ transition: 'fill 0.4s ease' }} />
-        <circle cx={centerX} cy={centerY} r="2.5" fill="var(--card-bg)" />
-        <text x={centerX} y={centerY + 26} textAnchor="middle" dominantBaseline="middle" fontSize="28" fontWeight="800" fill={currentResult ? currentResult.color : 'var(--text-secondary)'} style={{ transition: 'fill 0.4s ease' }}>
-          {currentResult ? currentResult.pf : '—'}
-        </text>
-        {currentResult && (
-          <text x={centerX} y={centerY + 46} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" letterSpacing="1.5" fill={currentResult.color}>
-            {currentResult.classification}
-          </text>
-        )}
-      </svg>
     </div>
   );
 
@@ -384,7 +381,7 @@ function ChronoCheck() {
               <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, fontWeight: 500 }}>Procedura IPSC — Reg. 5.6.3</p>
             </div>
           </div>
-          <GaugeSVG />
+          <GaugeSVG currentResult={currentResult} />
         </div>
 
         {/* Risultato Grande (desktop) */}
