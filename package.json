@@ -6,6 +6,11 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "overrides": {
+    "vite-plugin-pwa": {
+      "vite": "$vite"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
