@@ -2,18 +2,22 @@ import React, { useState, useEffect, useMemo } from 'react';
 import HitCounter from './components/HitCounter';
 import Modal from './components/Modal';
 import { calculateHitFactor } from './utils/scoring';
-import { Timer, RefreshCcw, Activity, Info, Sun, Moon, BookOpen, Download, LayoutGrid, FileText, Zap, Flame, Crosshair } from 'lucide-react';
+import { Timer, RefreshCcw, Activity, Info, Sun, Moon, BookOpen, Download, LayoutGrid, FileText, Zap, Flame, Crosshair, Trophy, Save } from 'lucide-react';
 import ChronoCheck from './components/ChronoCheck';
+import LandingPage from './components/LandingPage';
+import LSSAScoreCalculator from './components/LSSAScoreCalculator';
+import GareTab from './components/GareTab';
+import SaveStageModal from './components/SaveStageModal';
 
 const GithubIcon = ({ size = 24 }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
     strokeLinejoin="round"
   >
     <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
@@ -21,6 +25,13 @@ const GithubIcon = ({ size = 24 }) => (
 );
 
 function App() {
+  // Discipline selector: null = landing, 'ipsc' or 'lssa'
+  const [discipline, setDiscipline] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('discipline') || null;
+    }
+    return null;
+  });
   const [isMajor, setIsMajor] = useState(false);
   const [time, setTime] = useState('');
   const [hits, setHits] = useState({
@@ -29,7 +40,8 @@ function App() {
 
   const [activeModal, setActiveModal] = useState(null);
   const [rulesTab, setRulesTab] = useState('safety');
-  const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono'
+  const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono' | 'gare'
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   // Theme Management
   const [theme, setTheme] = useState(() => {
@@ -46,8 +58,22 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    if (discipline) {
+      localStorage.setItem('discipline', discipline);
+      document.documentElement.setAttribute('data-discipline', discipline);
+    } else {
+      localStorage.removeItem('discipline');
+      document.documentElement.removeAttribute('data-discipline');
+    }
+  }, [discipline]);
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleBackToLanding = () => {
+    setDiscipline(null);
   };
 
   const handleHitChange = (key, value) => {
@@ -64,19 +90,38 @@ function App() {
     return calculateHitFactor(hits, time || 0, isMajor);
   }, [hits, time, isMajor]);
 
+  // Landing page
+  if (!discipline) {
+    return <LandingPage onSelect={setDiscipline} theme={theme} toggleTheme={toggleTheme} />;
+  }
+
+  // LSSA / FIIDS
+  if (discipline === 'lssa') {
+    return <LSSAScoreCalculator onBack={handleBackToLanding} theme={theme} toggleTheme={toggleTheme} />;
+  }
+
+  // IPSC (default)
   return (
     <div style={{ width: '100%' }}>
       {/* HEADER */}
       <header style={{ textAlign: 'center', marginBottom: '24px', paddingTop: '24px', position: 'relative' }}>
-        <button 
-          onClick={toggleTheme} 
+        <div style={{ position: 'absolute', left: '16px', top: '12px' }}>
+          <button
+            onClick={handleBackToLanding}
+            style={{ padding: '8px 14px', color: 'var(--accent-color)', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--card-bg)', borderRadius: '20px', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}
+          >
+            ← Indietro
+          </button>
+        </div>
+        <button
+          onClick={toggleTheme}
           style={{ position: 'absolute', right: '16px', top: '12px', padding: '8px', color: 'var(--text-secondary)' }}
           aria-label="Toggle Tema"
         >
           {theme === 'dark' ? <Sun size={26} strokeWidth={2.5} /> : <Moon size={26} strokeWidth={2.5} />}
         </button>
 
-        <div className="flex-center" style={{ gap: '12px', marginBottom: '8px' }}>
+        <div className="flex-center" style={{ gap: '12px', marginBottom: '8px', paddingTop: '4px' }}>
           <img src="/icon.svg" alt="IPSC Logo" width="40" height="40" style={{ borderRadius: '10px', boxShadow: 'var(--shadow-md)' }} />
           <h1 style={{ fontSize: '36px', letterSpacing: '-0.8px' }}>IPSC Score</h1>
         </div>
@@ -98,6 +143,12 @@ function App() {
               className={`main-tab-btn ${activeTab === 'chrono' ? 'main-tab-active' : ''}`}
             >
               <Crosshair size={18} /> Chrono Check
+            </button>
+            <button
+              onClick={() => setActiveTab('gare')}
+              className={`main-tab-btn ${activeTab === 'gare' ? 'main-tab-active' : ''}`}
+            >
+              <Trophy size={18} /> Gare
             </button>
           </div>
         </div>
@@ -129,6 +180,12 @@ function App() {
       {activeTab === 'chrono' && (
         <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
           <ChronoCheck />
+        </div>
+      )}
+
+      {activeTab === 'gare' && (
+        <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
+          <GareTab discipline="ipsc" />
         </div>
       )}
 
@@ -215,6 +272,16 @@ function App() {
             </div>
           </div>
 
+          {/* SALVA STAGE DESKTOP ONLY */}
+          <button
+            className="desktop-only"
+            onClick={() => setShowSaveModal(true)}
+            disabled={!time || parseFloat(time) <= 0}
+            style={{ width: '100%', padding: '16px', color: '#FFF', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--accent-color)', borderRadius: 'var(--border-radius-lg)', boxShadow: '0 4px 12px rgba(0,122,255,0.3)', opacity: (!time || parseFloat(time) <= 0) ? 0.5 : 1 }}
+          >
+            <Save size={20} /> Salva Stage
+          </button>
+
           {/* RESET DESKTOP ONLY */}
           <button className="desktop-only" onClick={handleReset} style={{ width: '100%', padding: '16px', color: 'var(--danger-color)', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
             <RefreshCcw size={20} /> Reset Stage
@@ -237,15 +304,32 @@ function App() {
             </span>
           </div>
 
-          <button
-            onClick={handleReset}
-            style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--danger-color)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(255, 59, 48, 0.4)', transition: 'transform 0.2s' }}
-            aria-label="Reset Stage"
-          >
-            <RefreshCcw size={24} strokeWidth={2.5} />
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => setShowSaveModal(true)}
+              disabled={!time || parseFloat(time) <= 0}
+              style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--accent-color)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0, 122, 255, 0.4)', transition: 'transform 0.2s', opacity: (!time || parseFloat(time) <= 0) ? 0.4 : 1 }}
+              aria-label="Salva Stage"
+            >
+              <Save size={24} strokeWidth={2.5} />
+            </button>
+            <button
+              onClick={handleReset}
+              style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--danger-color)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(255, 59, 48, 0.4)', transition: 'transform 0.2s' }}
+              aria-label="Reset Stage"
+            >
+              <RefreshCcw size={24} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
       )}
+
+      <SaveStageModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        discipline="ipsc"
+        currentState={{ time: parseFloat(time) || 0, hits, isMajor, result }}
+      />
 
       {/* MODALS */}
       <Modal isOpen={activeModal === 'hitfactor'} onClose={() => setActiveModal(null)} title="Che cos'è l'Hit Factor?" maxWidth="600px">

@@ -5,7 +5,10 @@
   --text-secondary: #8E8E93;
   --accent-color: #007AFF;
   --danger-color: #FF3B30;
-  
+  --lssa-accent: #34C759;
+  --lssa-accent-dark: #248A3D;
+  --lssa-warn: #FF9500;
+
   --border-color: #E5E5EA;
   --border-radius-lg: 20px;
   --border-radius-md: 14px;
@@ -24,7 +27,10 @@
   --bg-color: #000000;
   --card-bg: rgba(28, 28, 30, 0.65);
   --text-primary: #FFFFFF;
-  --text-secondary: #EBEBF599; 
+  --text-secondary: #EBEBF599;
+  --lssa-accent: #30D158;
+  --lssa-accent-dark: #34C759;
+  --lssa-warn: #FFD60A;
   --border-color: #38383A;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -497,4 +503,36 @@ input:focus {
     align-self: start;
     gap: 20px;
   }
+}
+
+/* Landing Page */
+.landing-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.landing-card:active {
+  transform: scale(0.98);
+}
+
+/* LSSA Theme Overrides */
+[data-discipline='lssa'] body::before {
+  background: var(--lssa-accent) !important;
+}
+
+[data-discipline='lssa'] body::after {
+  background: var(--lssa-accent-dark) !important;
+}
+
+.lssa-tab-active {
+  color: var(--text-primary) !important;
+}
+
+.lssa-toolbar-btn:hover {
+  color: var(--text-primary) !important;
+}
+
+.lssa-input-focus:focus {
+  border-color: var(--lssa-accent) !important;
+  box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.2) !important;
 }

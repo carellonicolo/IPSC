@@ -1,53 +1,37 @@
-# Security Policy
+# Policy di Sicurezza
 
-## Versioni Supportate
+## Segnalazione di vulnerabilita
 
-| Versione | Supportata |
-|----------|-----------|
-| 2.x.x   | Si        |
-| 1.x.x   | No        |
+Se scopri una vulnerabilita di sicurezza in questo progetto, ti chiediamo di segnalarla in modo responsabile.
 
-## Segnalare una Vulnerabilita
+**Non aprire una Issue pubblica per vulnerabilita di sicurezza.**
 
-Questo progetto e una **Progressive Web App client-side** che non gestisce dati sensibili, autenticazione, o comunicazioni server-side. Tuttavia, prendiamo la sicurezza seriamente.
+Invece, contatta il maintainer del progetto tramite il suo [profilo GitHub](https://github.com/carellonicolo) o invia una segnalazione privata attraverso la funzionalita [Security Advisories](../../security/advisories) del repository.
 
-### Come segnalare
+## Cosa includere nella segnalazione
 
-Se scopri una vulnerabilita di sicurezza, **non aprire una Issue pubblica**. Invece:
+- Descrizione dettagliata della vulnerabilita
+- Passi per riprodurre il problema
+- Potenziale impatto della vulnerabilita
+- Eventuali suggerimenti per la risoluzione
 
-1. Invia un'email a **security@nicolocarello.it** con:
-   - Descrizione della vulnerabilita
-   - Passi per riprodurla
-   - Impatto potenziale
-   - Eventuale fix suggerito
+## Tempi di risposta
 
-2. Riceverai una conferma entro **48 ore**
-3. Lavoreremo insieme alla risoluzione prima della disclosure pubblica
+- **Conferma di ricezione**: entro 48 ore
+- **Valutazione iniziale**: entro 7 giorni
+- **Rilascio di un fix**: secondo la gravita del problema
 
-### Ambito
+## Ambito
 
-Vulnerabilita rilevanti per questo progetto includono:
+Questa policy si applica al codice sorgente ospitato in questo repository e alle eventuali istanze di deploy mantenute dal maintainer.
 
-- **XSS (Cross-Site Scripting)** — Iniezione di codice tramite input non sanitizzati
-- **Dipendenze compromesse** — Vulnerabilita note nelle dipendenze npm
-- **Service Worker** — Comportamenti inattesi del caching PWA
-- **PDF scaricabili** — Integrita dei file regolamento distribuiti
+## Buone pratiche
 
-### Fuori ambito
+Questo progetto adotta le seguenti pratiche di sicurezza:
 
-- Attacchi che richiedono accesso fisico al dispositivo
-- Social engineering
-- Denial of Service su hosting di terze parti
-- Bug nei browser stessi
-
-## Best Practice Implementate
-
-- Nessun dato utente viene trasmesso a server esterni
-- Tutti i calcoli avvengono client-side
-- Nessun utilizzo di `eval()`, `innerHTML` o pattern pericolosi
 - Dipendenze aggiornate regolarmente
-- Content Security Policy applicata tramite meta tag
+- Audit periodici con `npm audit`
+- Nessun dato sensibile nel repository
+- Headers di sicurezza per i deploy web (CSP, X-Frame-Options, etc.)
 
-## Ringraziamenti
-
-Ringraziamo chiunque segnali responsabilmente vulnerabilita di sicurezza. I segnalatori verranno accreditati (con il loro consenso) nel CHANGELOG.
+Grazie per aiutarci a mantenere questo progetto sicuro per tutti.
