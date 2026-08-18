@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import Modal from './Modal';
 import { getMatches, createMatch, addShooter, addStage, getMatch } from '../utils/matchStorage';
 import { Plus, Check, ChevronRight, Timer } from 'lucide-react';
@@ -17,7 +17,8 @@ export default function SaveStageModal({ isOpen, onClose, discipline, currentSta
   const accentVar = isLssa ? 'var(--lssa-accent)' : 'var(--accent-color)';
   const accentShadow = isLssa ? 'rgba(52,199,89,0.3)' : 'rgba(0,122,255,0.3)';
 
-  const matches = useMemo(() => isOpen ? getMatches(discipline) : [], [isOpen, discipline, saved]);
+  // Lettura diretta: la lista deve riflettere anche le gare create dentro la modale
+  const matches = isOpen ? getMatches(discipline) : [];
   const selectedMatch = selectedMatchId ? getMatch(selectedMatchId) : null;
   const selectedShooter = selectedMatch?.shooters.find(s => s.id === selectedShooterId) || null;
 
