@@ -21,6 +21,9 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
   const [activeModal, setActiveModal] = useState(null);
   const [rulesTab, setRulesTab] = useState('safety');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  // Dettaglio della stringa cronometrata da allegare allo stage, quando il
+  // salvataggio parte dal Timer invece che dallo Score Calculator.
+  const [timerStage, setTimerStage] = useState(null);
 
   // PALADIN state
   const [paladinPenalties, setPaladinPenalties] = useState({
@@ -60,6 +63,23 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
     setTime(seconds.toFixed(2));
     setActiveTab('score');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Tempo cronometrato -> stage di una gara, con il dettaglio dei colpi allegato
+  const handleSaveTimerStage = ({ totalTime, shots, parTime, inputMode }) => {
+    setTime(totalTime.toFixed(2));
+    setTimerStage({ shots, parTime, inputMode });
+    setShowSaveModal(true);
+  };
+
+  const openSaveModal = () => {
+    setTimerStage(null);
+    setShowSaveModal(true);
+  };
+
+  const closeSaveModal = () => {
+    setShowSaveModal(false);
+    setTimerStage(null);
   };
 
   const paladinResult = useMemo(() => {
@@ -178,6 +198,13 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
             accent="var(--lssa-accent)"
             accentGlow="rgba(52, 199, 89, 0.35)"
             onUseTime={handleTimerTime}
+            onSaveToMatch={handleSaveTimerStage}
+            scorePreview={(seconds) => {
+              const r = scoringMethod === 'paladin'
+                ? calculatePaladin(seconds, paladinPenalties)
+                : calculateDefensiveCount(seconds, defensiveHits, defensivePenalties);
+              return `${scoringMethod === 'paladin' ? 'Paladin' : 'Defensive Count'} · totale ${r.totalTime.toFixed(2)}s${r.penaltyTime > 0 ? ` (pen. +${r.penaltyTime.toFixed(2)}s)` : ''}`;
+            }}
           />
         </div>
       )}
@@ -307,7 +334,7 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
             {/* SALVA STAGE DESKTOP */}
             <button
               className="desktop-only"
-              onClick={() => setShowSaveModal(true)}
+              onClick={openSaveModal}
               disabled={!time || parseFloat(time) <= 0}
               style={{ width: '100%', padding: '16px', color: '#FFF', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--lssa-accent)', borderRadius: 'var(--border-radius-lg)', boxShadow: '0 4px 12px rgba(52,199,89,0.3)', opacity: (!time || parseFloat(time) <= 0) ? 0.5 : 1 }}
             >
@@ -341,7 +368,7 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              onClick={() => setShowSaveModal(true)}
+              onClick={openSaveModal}
               disabled={!time || parseFloat(time) <= 0}
               style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--lssa-accent)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(52,199,89,0.4)', transition: 'transform 0.2s', opacity: (!time || parseFloat(time) <= 0) ? 0.4 : 1 }}
               aria-label="Salva Stage"
@@ -361,7 +388,7 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
 
       <SaveStageModal
         isOpen={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
+        onClose={closeSaveModal}
         discipline="lssa"
         currentState={{
           time: parseFloat(time) || 0,
@@ -370,6 +397,7 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
           defensiveHits,
           defensivePenalties,
           result,
+          ...(timerStage ? { timer: timerStage } : {}),
         }}
       />
 

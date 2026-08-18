@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import Modal from './Modal';
 import { getMatches, createMatch, addShooter, addStage, getMatch } from '../utils/matchStorage';
-import { Plus, Check, ChevronRight } from 'lucide-react';
+import { Plus, Check, ChevronRight, Timer } from 'lucide-react';
+import { computeStats, fmt } from '../utils/timerStats';
 
 export default function SaveStageModal({ isOpen, onClose, discipline, currentState, onSaved }) {
   const [step, setStep] = useState(1); // 1=match, 2=shooter, 3=confirm
@@ -192,6 +193,10 @@ export default function SaveStageModal({ isOpen, onClose, discipline, currentSta
       ? `HF ${currentState.result?.hitFactor?.toFixed(4) ?? '—'}`
       : `${currentState.result?.totalTime?.toFixed(2) ?? '—'} sec`;
 
+    // Presente solo quando il salvataggio parte dal Timer Stage.
+    const timerShots = currentState.timer?.shots;
+    const timerStats = timerShots?.length ? computeStats(timerShots, currentState.timer.parTime) : null;
+
     return (
       <Modal isOpen={true} onClose={handleClose} title="Conferma Salvataggio" maxWidth="450px">
         <button
@@ -225,6 +230,13 @@ export default function SaveStageModal({ isOpen, onClose, discipline, currentSta
             <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>Risultato</span>
             <div style={{ fontSize: '28px', fontWeight: 800, color: accentVar, marginTop: '4px' }}>{previewLabel}</div>
           </div>
+
+          {timerStats && (
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              <Timer size={15} color={accentVar} />
+              Cronometro: {timerStats.count} colpi · 1° {fmt(timerStats.firstShot)}s · tot {fmt(timerStats.totalTime)}s
+            </div>
+          )}
         </div>
 
         <button

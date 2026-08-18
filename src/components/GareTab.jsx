@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { getMatches, getMatch, createMatch, deleteMatch, addShooter, deleteShooter, deleteStage } from '../utils/matchStorage';
-import { Plus, Trash2, ChevronRight, ArrowLeft, Users, Target, Clock, Trophy } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, ArrowLeft, Users, Target, Clock, Trophy, Timer, ChevronDown } from 'lucide-react';
+import { computeStats, fmt } from '../utils/timerStats';
 
 function formatDate(iso) {
   try {
@@ -14,6 +15,51 @@ function formatTime(iso) {
     const d = new Date(iso);
     return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   } catch { return ''; }
+}
+
+/** Dettaglio della stringa cronometrata allegata allo stage dal Timer. */
+function TimerDetail({ timer, accentVar }) {
+  const [open, setOpen] = useState(false);
+  if (!timer?.shots?.length) return null;
+
+  const s = computeStats(timer.shots, timer.parTime);
+  return (
+    <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}
+      >
+        <Timer size={14} color={accentVar} />
+        <span style={{ flex: 1, textAlign: 'left' }}>
+          {s.count} colpi · 1° {fmt(s.firstShot)}s · split medio {fmt(s.avgSplit)}s
+        </span>
+        <ChevronDown size={15} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+      </button>
+
+      {open && (
+        <div className="fade-in" style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '10px' }}>
+          {timer.shots.map((t, i) => (
+            <span
+              key={i}
+              style={{
+                fontSize: '11.5px', fontWeight: 600, padding: '3px 7px', borderRadius: '7px',
+                background: 'var(--bg-color)', border: '1px solid var(--border-color)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {i + 1}: {fmt(t)}s
+              {i > 0 && <span style={{ color: 'var(--text-secondary)' }}> (+{fmt(s.splits[i])})</span>}
+            </span>
+          ))}
+          {timer.parTime > 0 && (
+            <span style={{ fontSize: '11.5px', fontWeight: 700, padding: '3px 7px', borderRadius: '7px', color: s.parExceeded ? 'var(--danger-color)' : 'var(--text-secondary)' }}>
+              Par {fmt(timer.parTime)}s{s.parExceeded ? ' superato' : ''}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function GareTab({ discipline }) {
@@ -362,7 +408,7 @@ export default function GareTab({ discipline }) {
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>
             <Target size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
             <p style={{ fontSize: '16px', fontWeight: 600 }}>Nessuno stage salvato</p>
-            <p style={{ fontSize: '14px', marginTop: '4px' }}>Usa lo Score Calculator per calcolare e salvare i risultati</p>
+            <p style={{ fontSize: '14px', marginTop: '4px' }}>Salva i risultati dallo Score Calculator o direttamente dal Timer Stage</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -389,6 +435,7 @@ export default function GareTab({ discipline }) {
                   </div>
                 </div>
                 {renderStageDetail(stage)}
+                <TimerDetail timer={stage.timer} accentVar={accentVar} />
               </div>
             ))}
           </div>

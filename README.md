@@ -22,7 +22,7 @@ Disponibile all'indirizzo [ipsc.nicolocarello.it](https://ipsc.nicolocarello.it)
 ## Funzionalita Principali
 
 - **Calcolatore Hit Factor** — Calcolo rapido del Hit Factor (punti/tempo) con supporto per tutte le divisioni IPSC
-- **Timer Stage** — Cronometro da tiro dinamico: beep di partenza dopo un ritardo casuale (1-4 s come da regolamento), rilevamento dei colpi dal microfono, split, tempo del primo colpo e par time
+- **Timer Stage** — Cronometro da tiro dinamico: beep di partenza dopo un ritardo casuale (1-4 s come da regolamento), rilevamento dei colpi dal microfono, split, tempo del primo colpo e par time. Il risultato si salva direttamente come stage di una gara, dettaglio dei colpi incluso
 - **Chrono Check** — Verifica cronografica per il controllo del fattore di potenza (Minor/Major) secondo regolamento IPSC 2026
 - **Modalita offline** — Funzionamento completo senza connessione internet grazie alla tecnologia PWA
 - **Installabile** — Aggiungibile alla schermata home di qualsiasi dispositivo mobile
@@ -58,8 +58,9 @@ L'applicazione sara disponibile su `http://localhost:5173`.
 ## Utilizzo
 
 1. **Hit Factor** — Inserisci il punteggio e il tempo per ottenere il calcolo del Hit Factor
-2. **Timer Stage** — Premi START: dopo un ritardo casuale parte il beep e il cronometro registra ogni colpo. Il tempo valido e quello dell'ultimo colpo sparato e puo essere passato con un tocco al calcolatore di Hit Factor
-3. **Chrono Check** — Inserisci i dati cronografici (velocita, peso proiettile) per verificare il fattore di potenza
+2. **Timer Stage** — Premi START: dopo un ritardo casuale parte il beep e il cronometro registra ogni colpo. Il tempo valido e quello dell'ultimo colpo sparato e puo essere passato con un tocco al calcolatore di Hit Factor oppure salvato direttamente come stage dentro una gara
+3. **Gare** — Ogni stage salvato conserva punteggio, tempo e, se cronometrato, l'elenco completo dei colpi con i relativi split
+4. **Chrono Check** — Inserisci i dati cronografici (velocita, peso proiettile) per verificare il fattore di potenza
 
 ### Note sul Timer Stage
 

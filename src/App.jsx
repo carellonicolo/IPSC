@@ -43,6 +43,9 @@ function App() {
   const [rulesTab, setRulesTab] = useState('safety');
   const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono' | 'timer' | 'gare'
   const [showSaveModal, setShowSaveModal] = useState(false);
+  // Dettaglio della stringa cronometrata da allegare allo stage, quando il
+  // salvataggio parte dal Timer invece che dallo Score Calculator.
+  const [timerStage, setTimerStage] = useState(null);
 
   // Theme Management
   const [theme, setTheme] = useState(() => {
@@ -92,6 +95,23 @@ function App() {
     setTime(seconds.toFixed(2));
     setActiveTab('score');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Tempo cronometrato -> stage di una gara, con il dettaglio dei colpi allegato
+  const handleSaveTimerStage = ({ totalTime, shots, parTime, inputMode }) => {
+    setTime(totalTime.toFixed(2));
+    setTimerStage({ shots, parTime, inputMode });
+    setShowSaveModal(true);
+  };
+
+  const openSaveModal = () => {
+    setTimerStage(null);
+    setShowSaveModal(true);
+  };
+
+  const closeSaveModal = () => {
+    setShowSaveModal(false);
+    setTimerStage(null);
   };
 
   const result = useMemo(() => {
@@ -207,7 +227,14 @@ function App() {
 
       {activeTab === 'timer' && (
         <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
-          <StageTimer onUseTime={handleTimerTime} />
+          <StageTimer
+            onUseTime={handleTimerTime}
+            onSaveToMatch={handleSaveTimerStage}
+            scorePreview={(seconds) => {
+              const r = calculateHitFactor(hits, seconds, isMajor);
+              return `HF ${r.hitFactor.toFixed(4)} · ${r.stageScore} punti${r.totalPenalties > 0 ? ` (pen. -${r.totalPenalties})` : ''}`;
+            }}
+          />
         </div>
       )}
 
@@ -303,7 +330,7 @@ function App() {
           {/* SALVA STAGE DESKTOP ONLY */}
           <button
             className="desktop-only"
-            onClick={() => setShowSaveModal(true)}
+            onClick={openSaveModal}
             disabled={!time || parseFloat(time) <= 0}
             style={{ width: '100%', padding: '16px', color: '#FFF', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backgroundColor: 'var(--accent-color)', borderRadius: 'var(--border-radius-lg)', boxShadow: '0 4px 12px rgba(0,122,255,0.3)', opacity: (!time || parseFloat(time) <= 0) ? 0.5 : 1 }}
           >
@@ -334,7 +361,7 @@ function App() {
 
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              onClick={() => setShowSaveModal(true)}
+              onClick={openSaveModal}
               disabled={!time || parseFloat(time) <= 0}
               style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'var(--accent-color)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0, 122, 255, 0.4)', transition: 'transform 0.2s', opacity: (!time || parseFloat(time) <= 0) ? 0.4 : 1 }}
               aria-label="Salva Stage"
@@ -354,9 +381,9 @@ function App() {
 
       <SaveStageModal
         isOpen={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
+        onClose={closeSaveModal}
         discipline="ipsc"
-        currentState={{ time: parseFloat(time) || 0, hits, isMajor, result }}
+        currentState={{ time: parseFloat(time) || 0, hits, isMajor, result, ...(timerStage ? { timer: timerStage } : {}) }}
       />
 
       {/* MODALS */}

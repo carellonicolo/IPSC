@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Timer, Play, Square, Mic, MicOff, Settings2, Trash2, History, Info,
-  Volume2, Hand, Plus, RotateCcw, ChevronDown, AlertTriangle, Check, Zap, Activity,
+  Volume2, Hand, Plus, RotateCcw, ChevronDown, AlertTriangle, Check, Zap, Activity, Save,
 } from 'lucide-react';
 import Modal from './Modal';
 import {
@@ -142,6 +142,8 @@ export default function StageTimer({
   accent = 'var(--accent-color)',
   accentGlow = 'rgba(0, 122, 255, 0.35)',
   onUseTime,
+  onSaveToMatch,
+  scorePreview,   // (secondi) => string: punteggio che verrebbe salvato con quel tempo
 }) {
   const [settings, setSettings] = useState(loadSettings);
   const [phase, setPhase] = useState('idle');       // idle | standby | running | stopped
@@ -444,6 +446,17 @@ export default function StageTimer({
     setUsedTime(seconds);
   };
 
+  /** Manda tempo e dettaglio della stringa allo stage di una gara. */
+  const handleSaveToMatch = (entry) => {
+    if (!onSaveToMatch) return;
+    onSaveToMatch({
+      totalTime: entry.totalTime,
+      shots: entry.shots,
+      parTime: entry.parTime ?? null,
+      inputMode: entry.inputMode ?? settings.inputMode,
+    });
+  };
+
   /* ── Rendering ────────────────────────────────────────────────── */
 
   const statusLabel = { idle: 'Pronto', standby: 'Stand by...', running: 'In corso', stopped: 'Stringa conclusa' }[phase];
@@ -606,6 +619,28 @@ export default function StageTimer({
                 ? <><Check size={20} /> Tempo {fmt(usedTime)}s inserito nel calcolo</>
                 : <><Zap size={20} /> Usa {fmt(stats.totalTime)}s nel calcolo punteggio</>}
             </button>
+          )}
+
+          {onSaveToMatch && phase === 'stopped' && stats.count > 0 && (
+            <>
+              <button
+                onClick={() => handleSaveToMatch({ totalTime: stats.totalTime, shots, parTime: parTime || null })}
+                style={{
+                  width: '100%', marginTop: '10px', padding: '16px', fontSize: '16px', fontWeight: 700,
+                  color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: '10px', background: 'var(--bg-color)', borderRadius: 'var(--border-radius-lg)',
+                  border: `1px solid ${accent}`,
+                }}
+              >
+                <Save size={20} /> Salva lo stage in una gara
+              </button>
+              {scorePreview && (
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'center', lineHeight: 1.5 }}>
+                  Verranno salvati {fmt(stats.totalTime)}s, il dettaglio dei colpi e i bersagli
+                  gia inseriti nello Score Calculator: {scorePreview(Math.round(stats.totalTime * 100) / 100)}
+                </p>
+              )}
+            </>
           )}
         </div>
 
@@ -956,6 +991,18 @@ export default function StageTimer({
                             style={{ fontSize: '12px', fontWeight: 700, padding: '5px 10px', borderRadius: '8px', background: accent, color: '#FFF' }}
                           >
                             Usa {fmt(s.totalTime)}s
+                          </button>
+                        )}
+                        {onSaveToMatch && (
+                          <button
+                            onClick={() => handleSaveToMatch({ totalTime: s.totalTime, shots: entry.shots, parTime: entry.parTime, inputMode: entry.inputMode })}
+                            style={{
+                              fontSize: '12px', fontWeight: 700, padding: '5px 10px', borderRadius: '8px',
+                              background: 'var(--card-bg)', color: accent, border: `1px solid ${accent}`,
+                              display: 'flex', alignItems: 'center', gap: '5px',
+                            }}
+                          >
+                            <Save size={13} /> In gara
                           </button>
                         )}
                       </div>
