@@ -8,6 +8,7 @@ import LandingPage from './components/LandingPage';
 import LSSAScoreCalculator from './components/LSSAScoreCalculator';
 import GareTab from './components/GareTab';
 import SaveStageModal from './components/SaveStageModal';
+import StageTimer from './components/StageTimer';
 
 const GithubIcon = ({ size = 24 }) => (
   <svg
@@ -40,7 +41,7 @@ function App() {
 
   const [activeModal, setActiveModal] = useState(null);
   const [rulesTab, setRulesTab] = useState('safety');
-  const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono' | 'gare'
+  const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono' | 'timer' | 'gare'
   const [showSaveModal, setShowSaveModal] = useState(false);
 
   // Theme Management
@@ -83,6 +84,13 @@ function App() {
   const handleReset = () => {
     setHits({ A: 0, C: 0, D: 0, M: 0, NS: 0, PROC: 0 });
     setTime('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Tempo cronometrato -> campo tempo del calcolatore di Hit Factor
+  const handleTimerTime = (seconds) => {
+    setTime(seconds.toFixed(2));
+    setActiveTab('score');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -130,25 +138,39 @@ function App() {
         </p>
 
         {/* MAIN TAB SWITCHER */}
-        <div className="main-tab-container" style={{ maxWidth: '400px', margin: '20px auto 0 auto', padding: '0 16px' }}>
+        <div className="main-tab-container" style={{ maxWidth: '720px', margin: '20px auto 0 auto', padding: '0 16px' }}>
           <div className="main-tab-switcher">
             <button
               onClick={() => setActiveTab('score')}
               className={`main-tab-btn ${activeTab === 'score' ? 'main-tab-active' : ''}`}
             >
-              <Activity size={18} /> Score Calculator
+              <Activity size={18} />
+              <span className="tab-label-full">Score Calculator</span>
+              <span className="tab-label-short">Score</span>
             </button>
             <button
               onClick={() => setActiveTab('chrono')}
               className={`main-tab-btn ${activeTab === 'chrono' ? 'main-tab-active' : ''}`}
             >
-              <Crosshair size={18} /> Chrono Check
+              <Crosshair size={18} />
+              <span className="tab-label-full">Chrono Check</span>
+              <span className="tab-label-short">Chrono</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('timer')}
+              className={`main-tab-btn ${activeTab === 'timer' ? 'main-tab-active' : ''}`}
+            >
+              <Timer size={18} />
+              <span className="tab-label-full">Timer Stage</span>
+              <span className="tab-label-short">Timer</span>
             </button>
             <button
               onClick={() => setActiveTab('gare')}
               className={`main-tab-btn ${activeTab === 'gare' ? 'main-tab-active' : ''}`}
             >
-              <Trophy size={18} /> Gare
+              <Trophy size={18} />
+              <span className="tab-label-full">Gare</span>
+              <span className="tab-label-short">Gare</span>
             </button>
           </div>
         </div>
@@ -180,6 +202,12 @@ function App() {
       {activeTab === 'chrono' && (
         <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
           <ChronoCheck />
+        </div>
+      )}
+
+      {activeTab === 'timer' && (
+        <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
+          <StageTimer onUseTime={handleTimerTime} />
         </div>
       )}
 

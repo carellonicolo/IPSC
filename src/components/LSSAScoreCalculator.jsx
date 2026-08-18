@@ -6,6 +6,7 @@ import { Timer, RefreshCcw, Info, BookOpen, Download, FileText, LayoutGrid, Shie
 import ChronoCheck from './ChronoCheck';
 import GareTab from './GareTab';
 import SaveStageModal from './SaveStageModal';
+import StageTimer from './StageTimer';
 
 const GithubIcon = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -15,7 +16,7 @@ const GithubIcon = ({ size = 24 }) => (
 
 export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
   const [scoringMethod, setScoringMethod] = useState('paladin'); // 'paladin' | 'defensive'
-  const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono' | 'gare'
+  const [activeTab, setActiveTab] = useState('score'); // 'score' | 'chrono' | 'timer' | 'gare'
   const [time, setTime] = useState('');
   const [activeModal, setActiveModal] = useState(null);
   const [rulesTab, setRulesTab] = useState('safety');
@@ -51,6 +52,13 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
     setPaladinPenalties({ FTN: 0, PROC: 0, HNT: 0, FTE: 0, FTDR: 0 });
     setDefensiveHits({ ZERO: 0, DOWN2: 0, DOWN3: 0, MISS: 0 });
     setDefensivePenalties({ PENALTY: 0, FTE: 0, PROC: 0, ANTISP: 0 });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Tempo cronometrato -> campo tempo del calcolatore
+  const handleTimerTime = (seconds) => {
+    setTime(seconds.toFixed(2));
+    setActiveTab('score');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -98,25 +106,39 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
         </p>
 
         {/* MAIN TAB SWITCHER */}
-        <div className="main-tab-container" style={{ maxWidth: '400px', margin: '20px auto 0 auto', padding: '0 16px' }}>
+        <div className="main-tab-container" style={{ maxWidth: '720px', margin: '20px auto 0 auto', padding: '0 16px' }}>
           <div className="main-tab-switcher lssa-tab-switcher">
             <button
               onClick={() => setActiveTab('score')}
               className={`main-tab-btn ${activeTab === 'score' ? 'main-tab-active lssa-tab-active' : ''}`}
             >
-              <Target size={18} /> Score Calculator
+              <Target size={18} />
+              <span className="tab-label-full">Score Calculator</span>
+              <span className="tab-label-short">Score</span>
             </button>
             <button
               onClick={() => setActiveTab('chrono')}
               className={`main-tab-btn ${activeTab === 'chrono' ? 'main-tab-active lssa-tab-active' : ''}`}
             >
-              <Crosshair size={18} /> Chrono Check
+              <Crosshair size={18} />
+              <span className="tab-label-full">Chrono Check</span>
+              <span className="tab-label-short">Chrono</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('timer')}
+              className={`main-tab-btn ${activeTab === 'timer' ? 'main-tab-active lssa-tab-active' : ''}`}
+            >
+              <Timer size={18} />
+              <span className="tab-label-full">Timer Stage</span>
+              <span className="tab-label-short">Timer</span>
             </button>
             <button
               onClick={() => setActiveTab('gare')}
               className={`main-tab-btn ${activeTab === 'gare' ? 'main-tab-active lssa-tab-active' : ''}`}
             >
-              <Trophy size={18} /> Gare
+              <Trophy size={18} />
+              <span className="tab-label-full">Gare</span>
+              <span className="tab-label-short">Gare</span>
             </button>
           </div>
         </div>
@@ -146,6 +168,17 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
       {activeTab === 'chrono' && (
         <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
           <ChronoCheck />
+        </div>
+      )}
+
+      {/* TIMER TAB */}
+      {activeTab === 'timer' && (
+        <div className="fade-in" style={{ padding: '0 16px', paddingBottom: '40px' }}>
+          <StageTimer
+            accent="var(--lssa-accent)"
+            accentGlow="rgba(52, 199, 89, 0.35)"
+            onUseTime={handleTimerTime}
+          />
         </div>
       )}
 
