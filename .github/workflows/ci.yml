@@ -16,7 +16,9 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        # Vite 8 richiede Node 20.19+ e package.json dichiara engines >= 20:
+        # su Node 18 il build fallisce con "CustomEvent is not defined".
+        node-version: [20, 22]
 
     steps:
       - name: Checkout repository

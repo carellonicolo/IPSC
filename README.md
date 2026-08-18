@@ -41,7 +41,7 @@ Disponibile all'indirizzo [ipsc.nicolocarello.it](https://ipsc.nicolocarello.it)
 
 ## Requisiti
 
-- **Node.js** >= 18
+- **Node.js** >= 20
 - **npm** >= 9 (oppure bun)
 
 ## Installazione
