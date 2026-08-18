@@ -1,7 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { getMatches, getMatch, createMatch, deleteMatch, addShooter, deleteShooter, deleteStage } from '../utils/matchStorage';
-import { Plus, Trash2, ChevronRight, ArrowLeft, Users, Target, Clock, Trophy, Timer, ChevronDown } from 'lucide-react';
+import {
+  getMatches, getMatch, createMatch, deleteMatch, updateMatch,
+  addShooter, deleteShooter, updateShooter, deleteStage, updateStage,
+} from '../utils/matchStorage';
+import { Plus, Trash2, Pencil, Check, X, ChevronRight, ArrowLeft, Users, Target, Clock, Trophy, Timer, ChevronDown } from 'lucide-react';
 import { computeStats, fmt } from '../utils/timerStats';
+import EditStageModal from './EditStageModal';
 
 function formatDate(iso) {
   try {
@@ -15,6 +19,79 @@ function formatTime(iso) {
     const d = new Date(iso);
     return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   } catch { return ''; }
+}
+
+/** ISO -> valore per <input type="date">, in ora locale. */
+function toDateInput(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Valore di <input type="date"> -> ISO, conservando l'orario originale. */
+function fromDateInput(value, previousIso) {
+  const parts = value.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return previousIso;
+  const base = new Date(previousIso);
+  const d = Number.isNaN(base.getTime()) ? new Date() : base;
+  d.setFullYear(parts[0], parts[1] - 1, parts[2]);
+  return d.toISOString();
+}
+
+/** Form di rinomina usato sia nelle liste sia nelle intestazioni. */
+function InlineEdit({ name, onNameChange, date, onDateChange, onSave, onCancel, accentVar, placeholder }) {
+  return (
+    <div
+      style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', width: '100%' }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => onNameChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onSave();
+          if (e.key === 'Escape') onCancel();
+        }}
+        placeholder={placeholder}
+        autoFocus
+        style={{ flex: '1 1 160px', minWidth: 0, padding: '10px 12px', fontSize: '15px', fontWeight: 600 }}
+      />
+      {onDateChange && (
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => onDateChange(e.target.value)}
+          style={{ flex: '0 1 160px', padding: '10px 12px', fontSize: '14px' }}
+        />
+      )}
+      <div style={{ display: 'flex', gap: '6px' }}>
+        <button
+          onClick={onSave}
+          disabled={!name.trim()}
+          aria-label="Salva"
+          style={{
+            width: '40px', height: '40px', borderRadius: '10px', background: accentVar, color: '#FFF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: name.trim() ? 1 : 0.5,
+          }}
+        >
+          <Check size={18} strokeWidth={3} />
+        </button>
+        <button
+          onClick={onCancel}
+          aria-label="Annulla"
+          style={{
+            width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-color)',
+            border: '1px solid var(--border-color)', color: 'var(--text-secondary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <X size={18} />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /** Dettaglio della stringa cronometrata allegata allo stage dal Timer. */
@@ -70,7 +147,17 @@ export default function GareTab({ discipline }) {
   const [showNewMatch, setShowNewMatch] = useState(false);
   const [newShooterName, setNewShooterName] = useState('');
   const [showNewShooter, setShowNewShooter] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Modifica in linea di gare e tiratori, modale per gli stage
+  const [editingMatchId, setEditingMatchId] = useState(null);
+  const [editMatchName, setEditMatchName] = useState('');
+  const [editMatchDate, setEditMatchDate] = useState('');
+  const [editingShooterId, setEditingShooterId] = useState(null);
+  const [editShooterName, setEditShooterName] = useState('');
+  const [editingStage, setEditingStage] = useState(null);
+
+  // Serve solo a rileggere da localStorage dopo una scrittura
+  const [, setRefreshKey] = useState(0);
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
@@ -121,6 +208,44 @@ export default function GareTab({ discipline }) {
       }
       refresh();
     }
+  };
+
+  const startEditMatch = (e, match) => {
+    if (e) e.stopPropagation();
+    setEditingMatchId(match.id);
+    setEditMatchName(match.name);
+    setEditMatchDate(toDateInput(match.createdAt));
+  };
+
+  const saveEditMatch = () => {
+    const match = getMatch(editingMatchId);
+    if (!match || !editMatchName.trim()) return;
+    updateMatch(editingMatchId, {
+      name: editMatchName.trim(),
+      createdAt: fromDateInput(editMatchDate, match.createdAt),
+    });
+    setEditingMatchId(null);
+    refresh();
+  };
+
+  const startEditShooter = (e, shooter) => {
+    if (e) e.stopPropagation();
+    setEditingShooterId(shooter.id);
+    setEditShooterName(shooter.name);
+  };
+
+  const saveEditShooter = () => {
+    if (!editingShooterId || !editShooterName.trim()) return;
+    updateShooter(selectedMatchId, editingShooterId, { name: editShooterName.trim() });
+    setEditingShooterId(null);
+    refresh();
+  };
+
+  const saveEditStage = (patch) => {
+    if (!editingStage) return;
+    updateStage(selectedMatchId, selectedShooterId, editingStage.id, patch);
+    setEditingStage(null);
+    refresh();
   };
 
   const handleDeleteStage = (stageId) => {
@@ -273,34 +398,56 @@ export default function GareTab({ discipline }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {matches.map(m => (
-              <div
-                key={m.id}
-                onClick={() => goToShooters(m.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goToShooters(m.id)}
-                className="card"
-                style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '0', textAlign: 'left', width: '100%' }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', gap: '12px', marginTop: '4px' }}>
-                    <span>{formatDate(m.createdAt)}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={13} /> {m.shooters.length} tiratori</span>
-                    <span>{m.shooters.reduce((acc, s) => acc + s.stages.length, 0)} stage</span>
+              editingMatchId === m.id ? (
+                <div key={m.id} className="card" style={{ padding: '16px 20px', marginBottom: '0' }}>
+                  <InlineEdit
+                    name={editMatchName}
+                    onNameChange={setEditMatchName}
+                    date={editMatchDate}
+                    onDateChange={setEditMatchDate}
+                    onSave={saveEditMatch}
+                    onCancel={() => setEditingMatchId(null)}
+                    accentVar={accentVar}
+                    placeholder="Nome gara..."
+                  />
+                </div>
+              ) : (
+                <div
+                  key={m.id}
+                  onClick={() => goToShooters(m.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goToShooters(m.id)}
+                  className="card"
+                  style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '0', textAlign: 'left', width: '100%' }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', gap: '12px', marginTop: '4px' }}>
+                      <span>{formatDate(m.createdAt)}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={13} /> {m.shooters.length} tiratori</span>
+                      <span>{m.shooters.reduce((acc, s) => acc + s.stages.length, 0)} stage</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button
+                      onClick={(e) => startEditMatch(e, m)}
+                      style={{ padding: '8px', color: 'var(--text-secondary)', borderRadius: '50%' }}
+                      aria-label="Modifica gara"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteMatch(e, m.id)}
+                      style={{ padding: '8px', color: 'var(--danger-color)', borderRadius: '50%' }}
+                      aria-label="Elimina gara"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <ChevronRight size={18} color="var(--text-secondary)" />
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    onClick={(e) => handleDeleteMatch(e, m.id)}
-                    style={{ padding: '8px', color: 'var(--danger-color)', borderRadius: '50%' }}
-                    aria-label="Elimina gara"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <ChevronRight size={18} color="var(--text-secondary)" />
-                </div>
-              </div>
+              )
             ))}
           </div>
         )}
@@ -315,10 +462,33 @@ export default function GareTab({ discipline }) {
         <button onClick={goBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: accentVar, marginBottom: '16px', padding: '4px 0' }}>
           <ArrowLeft size={18} /> Le tue Gare
         </button>
+        {editingMatchId === selectedMatch.id ? (
+          <div className="card" style={{ padding: '16px', marginBottom: '16px' }}>
+            <InlineEdit
+              name={editMatchName}
+              onNameChange={setEditMatchName}
+              date={editMatchDate}
+              onDateChange={setEditMatchDate}
+              onSave={saveEditMatch}
+              onCancel={() => setEditingMatchId(null)}
+              accentVar={accentVar}
+              placeholder="Nome gara..."
+            />
+          </div>
+        ) : (
         <div className="flex-between" style={{ marginBottom: '16px' }}>
-          <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700 }}>{selectedMatch.name}</h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{formatDate(selectedMatch.createdAt)}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>{selectedMatch.name}</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{formatDate(selectedMatch.createdAt)}</p>
+            </div>
+            <button
+              onClick={(e) => startEditMatch(e, selectedMatch)}
+              style={{ padding: '6px', color: 'var(--text-secondary)', borderRadius: '50%', flexShrink: 0 }}
+              aria-label="Modifica gara"
+            >
+              <Pencil size={16} />
+            </button>
           </div>
           <button
             onClick={() => setShowNewShooter(!showNewShooter)}
@@ -327,6 +497,7 @@ export default function GareTab({ discipline }) {
             <Plus size={16} /> Tiratore
           </button>
         </div>
+        )}
 
         {showNewShooter && (
           <div className="card" style={{ padding: '16px', marginBottom: '12px', display: 'flex', gap: '8px' }}>
@@ -358,32 +529,52 @@ export default function GareTab({ discipline }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {selectedMatch.shooters.map(s => (
-              <div
-                key={s.id}
-                onClick={() => goToStages(s.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goToStages(s.id)}
-                className="card"
-                style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '0', textAlign: 'left', width: '100%' }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    {s.stages.length} stage salvati
+              editingShooterId === s.id ? (
+                <div key={s.id} className="card" style={{ padding: '16px 20px', marginBottom: '0' }}>
+                  <InlineEdit
+                    name={editShooterName}
+                    onNameChange={setEditShooterName}
+                    onSave={saveEditShooter}
+                    onCancel={() => setEditingShooterId(null)}
+                    accentVar={accentVar}
+                    placeholder="Nome tiratore..."
+                  />
+                </div>
+              ) : (
+                <div
+                  key={s.id}
+                  onClick={() => goToStages(s.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goToStages(s.id)}
+                  className="card"
+                  style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '0', textAlign: 'left', width: '100%' }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {s.stages.length} stage salvati
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button
+                      onClick={(e) => startEditShooter(e, s)}
+                      style={{ padding: '8px', color: 'var(--text-secondary)', borderRadius: '50%' }}
+                      aria-label="Rinomina tiratore"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteShooter(e, s.id)}
+                      style={{ padding: '8px', color: 'var(--danger-color)', borderRadius: '50%' }}
+                      aria-label="Elimina tiratore"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <ChevronRight size={18} color="var(--text-secondary)" />
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    onClick={(e) => handleDeleteShooter(e, s.id)}
-                    style={{ padding: '8px', color: 'var(--danger-color)', borderRadius: '50%' }}
-                    aria-label="Elimina tiratore"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <ChevronRight size={18} color="var(--text-secondary)" />
-                </div>
-              </div>
+              )
             ))}
           </div>
         )}
@@ -399,10 +590,32 @@ export default function GareTab({ discipline }) {
         <button onClick={goBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: accentVar, marginBottom: '16px', padding: '4px 0' }}>
           <ArrowLeft size={18} /> {selectedMatch.name}
         </button>
-        <div style={{ marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 700 }}>{selectedShooter.name}</h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{stages.length} stage salvati</p>
-        </div>
+        {editingShooterId === selectedShooter.id ? (
+          <div className="card" style={{ padding: '16px', marginBottom: '16px' }}>
+            <InlineEdit
+              name={editShooterName}
+              onNameChange={setEditShooterName}
+              onSave={saveEditShooter}
+              onCancel={() => setEditingShooterId(null)}
+              accentVar={accentVar}
+              placeholder="Nome tiratore..."
+            />
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>{selectedShooter.name}</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{stages.length} stage salvati</p>
+            </div>
+            <button
+              onClick={(e) => startEditShooter(e, selectedShooter)}
+              style={{ padding: '6px', color: 'var(--text-secondary)', borderRadius: '50%', flexShrink: 0 }}
+              aria-label="Rinomina tiratore"
+            >
+              <Pencil size={16} />
+            </button>
+          </div>
+        )}
 
         {stages.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>
@@ -421,10 +634,18 @@ export default function GareTab({ discipline }) {
                     </span>
                     <span style={{ fontSize: '15px', fontWeight: 700 }}>Stage {stage.stageNumber}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                       {formatDate(stage.savedAt)} {formatTime(stage.savedAt)}
+                      {stage.editedAt && <span title={`Modificato il ${formatDate(stage.editedAt)}`}> · modificato</span>}
                     </span>
+                    <button
+                      onClick={() => setEditingStage(stage)}
+                      style={{ padding: '6px', color: 'var(--text-secondary)', borderRadius: '50%' }}
+                      aria-label={`Modifica stage ${stage.stageNumber}`}
+                    >
+                      <Pencil size={14} />
+                    </button>
                     <button
                       onClick={() => handleDeleteStage(stage.id)}
                       style={{ padding: '6px', color: 'var(--danger-color)', borderRadius: '50%' }}
@@ -439,6 +660,16 @@ export default function GareTab({ discipline }) {
               </div>
             ))}
           </div>
+        )}
+
+        {editingStage && (
+          <EditStageModal
+            key={editingStage.id}
+            stage={editingStage}
+            discipline={discipline}
+            onClose={() => setEditingStage(null)}
+            onSave={saveEditStage}
+          />
         )}
       </div>
     );

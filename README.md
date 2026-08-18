@@ -59,7 +59,7 @@ L'applicazione sara disponibile su `http://localhost:5173`.
 
 1. **Hit Factor** — Inserisci il punteggio e il tempo per ottenere il calcolo del Hit Factor
 2. **Timer Stage** — Premi START: dopo un ritardo casuale parte il beep e il cronometro registra ogni colpo. Il tempo valido e quello dell'ultimo colpo sparato e puo essere passato con un tocco al calcolatore di Hit Factor oppure salvato direttamente come stage dentro una gara
-3. **Gare** — Ogni stage salvato conserva punteggio, tempo e, se cronometrato, l'elenco completo dei colpi con i relativi split
+3. **Gare** — Ogni stage salvato conserva punteggio, tempo e, se cronometrato, l'elenco completo dei colpi con i relativi split. Tutto resta modificabile dopo il salvataggio: nome e data della gara, nome del tiratore, e ogni voce di uno stage (numero, tempo, bersagli, penalita, power factor)
 4. **Chrono Check** — Inserisci i dati cronografici (velocita, peso proiettile) per verificare il fattore di potenza
 
 ### Note sul Timer Stage

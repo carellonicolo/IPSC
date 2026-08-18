@@ -128,3 +128,52 @@ export function getShooterStages(matchId, shooterId) {
   const shooter = match.shooters.find(s => s.id === shooterId);
   return shooter ? shooter.stages : [];
 }
+
+// ─── MODIFICHE ─────────────────────────────────────────
+
+/** Aggiorna i dati di una gara (nome, data). */
+export function updateMatch(matchId, patch) {
+  const matches = _load();
+  const match = matches.find(m => m.id === matchId);
+  if (!match) return null;
+  Object.assign(match, patch);
+  _save(matches);
+  return match;
+}
+
+/** Aggiorna i dati di un tiratore (nome). */
+export function updateShooter(matchId, shooterId, patch) {
+  const matches = _load();
+  const match = matches.find(m => m.id === matchId);
+  if (!match) return null;
+  const shooter = match.shooters.find(s => s.id === shooterId);
+  if (!shooter) return null;
+  Object.assign(shooter, patch);
+  _save(matches);
+  return shooter;
+}
+
+/**
+ * Aggiorna uno stage gia' salvato (punteggio, tempo, numero, dettaglio timer).
+ * `id` e `savedAt` restano quelli originali: si modifica il risultato, non
+ * si crea una registrazione nuova.
+ */
+export function updateStage(matchId, shooterId, stageId, patch) {
+  const matches = _load();
+  const match = matches.find(m => m.id === matchId);
+  if (!match) return null;
+  const shooter = match.shooters.find(s => s.id === shooterId);
+  if (!shooter) return null;
+  const index = shooter.stages.findIndex(s => s.id === stageId);
+  if (index === -1) return null;
+
+  const { id, savedAt, ...rest } = patch;
+  void id; void savedAt;
+  shooter.stages[index] = {
+    ...shooter.stages[index],
+    ...rest,
+    editedAt: new Date().toISOString(),
+  };
+  _save(matches);
+  return shooter.stages[index];
+}

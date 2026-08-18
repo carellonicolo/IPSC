@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth }) {
+export default function Modal({ isOpen, onClose, title, children, maxWidth, hideFooter }) {
   // Disabilita lo scrolling in background quando la modal è aperta
   useEffect(() => {
     if (isOpen) {
@@ -42,23 +42,26 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth }) {
           {children}
         </div>
         
-        <button 
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: '14px',
-            marginTop: '28px',
-            backgroundColor: 'var(--accent-color)',
-            color: '#FFFFFF',
-            borderRadius: 'var(--border-radius-md)',
-            fontWeight: 600,
-            fontSize: '16px',
-            letterSpacing: '0.3px',
-            boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)'
-          }}
-        >
-          Ho capito
-        </button>
+        {/* Le modali con i propri pulsanti (form di modifica) passano hideFooter */}
+        {!hideFooter && (
+          <button 
+            onClick={onClose}
+            style={{
+              width: '100%',
+              padding: '14px',
+              marginTop: '28px',
+              backgroundColor: 'var(--accent-color)',
+              color: '#FFFFFF',
+              borderRadius: 'var(--border-radius-md)',
+              fontWeight: 600,
+              fontSize: '16px',
+              letterSpacing: '0.3px',
+              boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)'
+            }}
+          >
+            Ho capito
+          </button>
+        )}
       </div>
     </div>
   );
