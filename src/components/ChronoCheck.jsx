@@ -2,13 +2,31 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Crosshair, RotateCcw, Scale, CheckCircle2, XCircle, Info } from 'lucide-react';
 
 const GAUGE_MAX = 250;
+
+/* Geometria del quadrante.
+ * Il viewBox deve contenere l'intero arco piu' i tick e le etichette esterne:
+ * con centro (130, 118), raggio 90 e sweep di 270 gradi l'estremo piu' basso
+ * (etichette a raggio 109, a 45 gradi sotto l'orizzonte) arriva a y = 195. */
+const GAUGE_W = 260;
+const GAUGE_H = 206;
+const centerX = 130;
+const centerY = 118;
 const gaugeRadius = 90;
-const gaugeStroke = 12;
-const centerX = 120;
-const centerY = 105;
+const gaugeStroke = 14;
+const tickInner = gaugeRadius + 4;
+const tickOuter = gaugeRadius + 10;
+const labelRadius = gaugeRadius + 23;
 const startAngle = 225;
 const totalSweep = 270;
 const endAngle = startAngle - totalSweep;
+
+const ZONES = [
+  { from: 0, to: 125, color: '#FF3B30' },
+  { from: 125, to: 170, color: '#FF9F0A' },
+  { from: 170, to: GAUGE_MAX, color: '#34C759' },
+];
+
+const TICKS = [0, 125, 170, GAUGE_MAX];
 
 const polarToCartesian = (cx, cy, r, angleDeg) => {
   const rad = (angleDeg * Math.PI) / 180;
@@ -23,52 +41,113 @@ const describeArc = (cx, cy, r, startA, endA) => {
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
 };
 
-const angleForValue = (val) => startAngle - (Math.min(val, GAUGE_MAX) / GAUGE_MAX) * totalSweep;
+const clampPF = (val) => Math.max(0, Math.min(val, GAUGE_MAX));
+const angleForValue = (val) => startAngle - (clampPF(val) / GAUGE_MAX) * totalSweep;
 
-const GaugeSVG = ({ currentResult }) => {
-  const pfValue = currentResult ? Math.min(currentResult.pf, GAUGE_MAX) : 0;
-  const ratio = pfValue / GAUGE_MAX;
-  const needleAngle = startAngle - ratio * totalSweep;
-  const needleEnd = polarToCartesian(centerX, centerY, gaugeRadius - 20, needleAngle);
-  const needleColor = currentResult ? currentResult.color : 'var(--text-secondary)';
+const GaugeSVG = ({ currentResult, pfFloor }) => {
+  const pf = currentResult ? currentResult.pf : null;
+  const hasValue = pf !== null;
+  const valueAngle = angleForValue(hasValue ? pf : 0);
+  const marker = polarToCartesian(centerX, centerY, gaugeRadius, valueAngle);
+  const statusColor = hasValue ? currentResult.statusColor : 'var(--text-secondary)';
 
   return (
     <div style={{
       display: 'flex', justifyContent: 'center',
       background: currentResult ? currentResult.bgGlow : 'transparent',
-      borderRadius: '16px', padding: '4px 0', transition: 'background 0.4s ease'
+      borderRadius: '16px', padding: '8px 0', transition: 'background 0.4s ease',
     }}>
-      <svg width="240" height="148" viewBox="0 0 240 148">
-        <path d={describeArc(centerX, centerY, gaugeRadius, startAngle, endAngle)} fill="none" stroke="var(--border-color)" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.4" />
-        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(0), angleForValue(125))} fill="none" stroke="#FF3B30" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
-        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(125), angleForValue(170))} fill="none" stroke="#FF9F0A" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
-        <path d={describeArc(centerX, centerY, gaugeRadius, angleForValue(170), angleForValue(GAUGE_MAX))} fill="none" stroke="#34C759" strokeWidth={gaugeStroke} strokeLinecap="round" opacity="0.25" />
-        {currentResult && (
-          <path d={describeArc(centerX, centerY, gaugeRadius, startAngle, needleAngle)} fill="none" stroke={currentResult.color} strokeWidth={gaugeStroke} strokeLinecap="round" style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+      <svg
+        viewBox={`0 0 ${GAUGE_W} ${GAUGE_H}`}
+        width="100%"
+        style={{ maxWidth: '300px', height: 'auto', display: 'block' }}
+        role="img"
+        aria-label={hasValue
+          ? `Power Factor ${pf}, ${currentResult.pass ? 'sufficiente' : 'insufficiente'} rispetto alla soglia di ${pfFloor}`
+          : 'Power Factor non ancora calcolato'}
+      >
+        {/* Traccia di fondo */}
+        <path
+          d={describeArc(centerX, centerY, gaugeRadius, startAngle, endAngle)}
+          fill="none" stroke="var(--border-color)" strokeWidth={gaugeStroke}
+          strokeLinecap="round" opacity="0.35"
+        />
+
+        {/* Fasce di riferimento: insufficiente / minor / major */}
+        {ZONES.map(z => (
+          <path
+            key={z.from}
+            d={describeArc(centerX, centerY, gaugeRadius, angleForValue(z.from), angleForValue(z.to))}
+            fill="none" stroke={z.color} strokeWidth={gaugeStroke} opacity="0.22"
+          />
+        ))}
+
+        {/* Arco di avanzamento fino al valore misurato */}
+        {hasValue && pf > 0 && (
+          <path
+            d={describeArc(centerX, centerY, gaugeRadius, startAngle, valueAngle)}
+            fill="none" stroke={statusColor} strokeWidth={gaugeStroke} strokeLinecap="round"
+            style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          />
         )}
-        {[0, 125, 170, 250].map((val) => {
+
+        {/* Tacche e valori di scala */}
+        {TICKS.map(val => {
           const a = angleForValue(val);
-          const outer = polarToCartesian(centerX, centerY, gaugeRadius + 8, a);
-          const inner = polarToCartesian(centerX, centerY, gaugeRadius + 2, a);
-          const labelPos = polarToCartesian(centerX, centerY, gaugeRadius + 18, a);
-          const isMajor = val === 125 || val === 170;
+          const inner = polarToCartesian(centerX, centerY, tickInner, a);
+          const outer = polarToCartesian(centerX, centerY, tickOuter, a);
+          const label = polarToCartesian(centerX, centerY, labelRadius, a);
+          const isFloor = val === pfFloor;
           return (
             <g key={val}>
-              <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke={isMajor ? 'var(--text-primary)' : 'var(--text-secondary)'} strokeWidth={isMajor ? 2 : 1} opacity={isMajor ? 0.8 : 0.4} />
-              <text x={labelPos.x} y={labelPos.y} textAnchor="middle" dominantBaseline="middle" fontSize="9" fontWeight={isMajor ? 700 : 500} fill={isMajor ? 'var(--text-primary)' : 'var(--text-secondary)'} opacity={isMajor ? 1 : 0.5}>{val}</text>
+              <line
+                x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+                stroke={isFloor ? 'var(--text-primary)' : 'var(--text-secondary)'}
+                strokeWidth={isFloor ? 2.5 : 1.5}
+                opacity={isFloor ? 0.9 : 0.45}
+                strokeLinecap="round"
+              />
+              <text
+                x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle"
+                fontSize="10" fontWeight={isFloor ? 800 : 600}
+                fill={isFloor ? 'var(--text-primary)' : 'var(--text-secondary)'}
+                opacity={isFloor ? 1 : 0.6}
+              >
+                {val}
+              </text>
             </g>
           );
         })}
-        <line x1={centerX} y1={centerY} x2={needleEnd.x} y2={needleEnd.y} stroke={needleColor} strokeWidth="2.5" strokeLinecap="round" style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }} />
-        <circle cx={centerX} cy={centerY} r="5" fill={needleColor} style={{ transition: 'fill 0.4s ease' }} />
-        <circle cx={centerX} cy={centerY} r="2.5" fill="var(--card-bg)" />
-        <text x={centerX} y={centerY + 26} textAnchor="middle" dominantBaseline="middle" fontSize="28" fontWeight="800" fill={currentResult ? currentResult.color : 'var(--text-secondary)'} style={{ transition: 'fill 0.4s ease' }}>
-          {currentResult ? currentResult.pf : '—'}
+
+        {/* Indicatore sul valore corrente */}
+        {hasValue && (
+          <g style={{ transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <circle cx={marker.x} cy={marker.y} r="9" fill="var(--card-bg)" />
+            <circle cx={marker.x} cy={marker.y} r="6.5" fill={statusColor} />
+          </g>
+        )}
+
+        {/* Lettura centrale: nessuna sovrapposizione con l'arco */}
+        <text x={centerX} y={centerY - 24} textAnchor="middle" dominantBaseline="middle"
+              fontSize="9.5" fontWeight="700" letterSpacing="1.4" fill="var(--text-secondary)">
+          POWER FACTOR
         </text>
-        {currentResult && (
-          <text x={centerX} y={centerY + 46} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" letterSpacing="1.5" fill={currentResult.color}>
-            {currentResult.classification}
-          </text>
+        <text x={centerX} y={centerY + 8} textAnchor="middle" dominantBaseline="middle"
+              fontSize="44" fontWeight="800" fill={statusColor}
+              style={{ transition: 'fill 0.4s ease' }}>
+          {hasValue ? pf : '—'}
+        </text>
+        {hasValue && (
+          <>
+            <text x={centerX} y={centerY + 34} textAnchor="middle" dominantBaseline="middle"
+                  fontSize="11" fontWeight="800" letterSpacing="0.8" fill={currentResult.color}>
+              {currentResult.classification}
+            </text>
+            <text x={centerX} y={centerY + 52} textAnchor="middle" dominantBaseline="middle"
+                  fontSize="10" fontWeight="600" fill="var(--text-secondary)">
+              richiesto ≥ {pfFloor}
+            </text>
+          </>
         )}
       </svg>
     </div>
@@ -76,10 +155,28 @@ const GaugeSVG = ({ currentResult }) => {
 };
 
 function classifyPF(pf) {
-  if (pf >= 170) return { classification: 'MAJOR', color: '#34C759', bgGlow: 'rgba(52, 199, 89, 0.15)' };
-  if (pf >= 160) return { classification: 'MAJOR (Open 9mm)', color: '#30D158', bgGlow: 'rgba(48, 209, 88, 0.12)' };
-  if (pf >= 125) return { classification: 'MINOR', color: '#FF9F0A', bgGlow: 'rgba(255, 159, 10, 0.12)' };
-  return { classification: 'INSUFFICIENTE', color: '#FF3B30', bgGlow: 'rgba(255, 59, 48, 0.12)' };
+  if (pf >= 170) return { classification: 'MAJOR', color: '#34C759' };
+  if (pf >= 160) return { classification: 'MAJOR (Open 9mm)', color: '#30D158' };
+  if (pf >= 125) return { classification: 'MINOR', color: '#FF9F0A' };
+  return { classification: 'INSUFFICIENTE', color: '#FF3B30' };
+}
+
+/**
+ * Un test e' PASS solo rispetto al PF dichiarato: 165 e' "Major (Open 9mm)"
+ * come fascia, ma resta un FAIL per chi ha dichiarato Major. Colore e alone
+ * del cruscotto seguono l'esito, la fascia resta come riferimento di scala.
+ */
+function buildTest(pf, avgValue, pfFloor, extra = {}) {
+  const pass = pf >= pfFloor;
+  return {
+    pf,
+    avg: avgValue.toFixed(1),
+    pass,
+    statusColor: pass ? '#34C759' : '#FF3B30',
+    bgGlow: pass ? 'rgba(52, 199, 89, 0.13)' : 'rgba(255, 59, 48, 0.10)',
+    ...classifyPF(pf),
+    ...extra,
+  };
 }
 
 function calcPF(weight, avgVelocity) {
@@ -109,30 +206,26 @@ function ChronoCheck() {
     let test1 = null;
     if (parsed.length >= 3) {
       const avg = (parsed[0] + parsed[1] + parsed[2]) / 3;
-      const pf = calcPF(w, avg);
-      test1 = { pf, avg: avg.toFixed(1), pass: pf >= pfFloor, ...classifyPF(pf) };
+      test1 = buildTest(calcPF(w, avg), avg, pfFloor);
     }
 
     let test2 = null;
     if (parsed.length >= 4) {
       const available = parsed.slice(0, 6);
       const avg = avgTopN(available, 3);
-      const pf = calcPF(w, avg);
-      test2 = { pf, avg: avg.toFixed(1), pass: pf >= pfFloor, usedCount: available.length, ...classifyPF(pf) };
+      test2 = buildTest(calcPF(w, avg), avg, pfFloor, { usedCount: available.length });
     }
 
     let test3 = null;
     if (parsed.length >= 7) {
       const avg = avgTopN(parsed.slice(0, 7), 3);
-      const pf = calcPF(w, avg);
-      test3 = { pf, avg: avg.toFixed(1), pass: pf >= pfFloor, ...classifyPF(pf) };
+      test3 = buildTest(calcPF(w, avg), avg, pfFloor);
     }
 
     let test3alt = null;
     if (w2 && w2 > w && parsed.length >= 6) {
       const avg = avgTopN(parsed.slice(0, 6), 3);
-      const pf = calcPF(w2, avg);
-      test3alt = { pf, avg: avg.toFixed(1), pass: pf >= pfFloor, bulletWeight: w2, ...classifyPF(pf) };
+      test3alt = buildTest(calcPF(w2, avg), avg, pfFloor, { bulletWeight: w2 });
     }
 
     let current = test1;
@@ -208,7 +301,7 @@ function ChronoCheck() {
         }
         <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '12px' }}>Media: {test.avg} fps</span>
       </div>
-      <span style={{ fontWeight: 800, fontSize: '15px', color: test.color }}>PF {test.pf}</span>
+      <span style={{ fontWeight: 800, fontSize: '15px', color: test.statusColor }}>PF {test.pf}</span>
     </div>
   );
 
@@ -242,6 +335,7 @@ function ChronoCheck() {
                 type="number" inputMode="decimal" value={bulletWeight}
                 onChange={(e) => setBulletWeight(e.target.value)}
                 placeholder="es. 124"
+                aria-label="Peso della prima palla in grani"
                 style={{ width: '100%', padding: '14px', fontSize: '20px', fontWeight: 700, textAlign: 'center', borderRadius: '10px' }}
               />
             </div>
@@ -254,6 +348,7 @@ function ChronoCheck() {
                   type="number" inputMode="decimal" value={bulletWeight2}
                   onChange={(e) => setBulletWeight2(e.target.value)}
                   placeholder="opzionale"
+                  aria-label="Peso della seconda palla in grani"
                   style={{ width: '100%', padding: '14px', fontSize: '20px', fontWeight: 700, textAlign: 'center', borderRadius: '10px' }}
                 />
               </div>
@@ -281,6 +376,7 @@ function ChronoCheck() {
                   type="number" inputMode="decimal" value={velocities[i]}
                   onChange={(e) => handleVelocityChange(i, e.target.value)}
                   placeholder="—"
+                  aria-label={`Velocità colpo ${i + 1} in fps`}
                   style={velInputStyle(i)}
                 />
               </div>
@@ -310,6 +406,7 @@ function ChronoCheck() {
                     type="number" inputMode="decimal" value={velocities[i]}
                     onChange={(e) => handleVelocityChange(i, e.target.value)}
                     placeholder="—"
+                    aria-label={`Velocità colpo ${i + 1} in fps`}
                     style={velInputStyle(i)}
                   />
                 </div>
@@ -345,6 +442,7 @@ function ChronoCheck() {
                   type="number" inputMode="decimal" value={velocities[6]}
                   onChange={(e) => handleVelocityChange(6, e.target.value)}
                   placeholder="—"
+                  aria-label="Velocità colpo 7 in fps"
                   style={velInputStyle(6)}
                 />
               </div>
@@ -381,25 +479,54 @@ function ChronoCheck() {
               <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, fontWeight: 500 }}>Procedura IPSC — Reg. 5.6.3</p>
             </div>
           </div>
-          <GaugeSVG currentResult={currentResult} />
+          <GaugeSVG currentResult={currentResult} pfFloor={results?.pfFloor ?? (declaredPF === 'major' ? 170 : 125)} />
+
+          {/* Esito su telefono: la card grande con PASS/FAIL e' desktop-only,
+              quindi da mobile il cruscotto non diceva mai se il campione passava. */}
+          {currentResult ? (
+            <div className="mobile-only" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              flexWrap: 'wrap', marginTop: '14px', padding: '10px 14px', borderRadius: '12px',
+              background: currentResult.pass ? 'rgba(52, 199, 89, 0.10)' : 'rgba(255, 59, 48, 0.08)',
+              border: `1px solid ${currentResult.statusColor}33`,
+            }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '4px 12px', borderRadius: '20px',
+                background: currentResult.statusColor, color: '#FFF',
+                fontSize: '13px', fontWeight: 800, letterSpacing: '0.5px',
+              }}>
+                {currentResult.pass ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                {currentResult.pass ? 'PASS' : 'FAIL'}
+              </span>
+              <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                {declaredPF === 'major' ? 'Major' : 'Minor'} dichiarato · media {currentResult.avg} fps
+                {currentResult.pf > GAUGE_MAX && ' · oltre il fondo scala'}
+              </span>
+            </div>
+          ) : (
+            <p style={{ marginTop: '14px', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Inserisci peso della palla e le prime 3 velocità per il calcolo.
+            </p>
+          )}
         </div>
 
         {/* Risultato Grande (desktop) */}
         {currentResult && (
-          <div className="card desktop-only" style={{ marginBottom: 0, border: `2px solid ${currentResult.color}33`, transform: 'scale(1.02)', padding: '20px' }}>
+          <div className="card desktop-only" style={{ marginBottom: 0, border: `2px solid ${currentResult.statusColor}33`, transform: 'scale(1.02)', padding: '20px' }}>
             <div className="flex-between">
               <div>
                 <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Power Factor</span>
-                <div style={{ fontSize: '56px', fontWeight: 800, lineHeight: 1, color: currentResult.color, marginTop: '8px' }}>
+                <div style={{ fontSize: '56px', fontWeight: 800, lineHeight: 1, color: currentResult.statusColor, marginTop: '8px' }}>
                   {currentResult.pf}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{
                   padding: '8px 16px', borderRadius: '20px',
-                  background: currentResult.color, color: '#FFF',
+                  background: currentResult.statusColor, color: '#FFF',
                   fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px',
-                  boxShadow: `0 4px 12px ${currentResult.color}44`,
+                  boxShadow: `0 4px 12px ${currentResult.statusColor}44`,
                   marginBottom: '8px'
                 }}>
                   {currentResult.pass ? 'PASS' : 'FAIL'}
