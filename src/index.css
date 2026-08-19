@@ -505,6 +505,31 @@ input:focus {
   }
 }
 
+/* Barra superiore dell'header (Indietro + tema).
+   Da 700px in su resta sovrapposta in alto, cosi' il titolo puo' stare
+   centrato su tutta la larghezza come prima. Sotto i 700px scende in
+   flusso: con titolo da 36px piu' logo non resta spazio ai lati e il tasto
+   Indietro finisce sopra il titolo. La soglia e' larga di proposito, perche'
+   il font di sistema di iOS rende il titolo piu' largo di Chromium. */
+.app-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 16px;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 700px) {
+  .app-header-bar {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    right: 0;
+    margin-bottom: 0;
+  }
+}
+
 /* Landing Page */
 .landing-card:hover {
   transform: translateY(-4px) scale(1.02);

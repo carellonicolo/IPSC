@@ -133,21 +133,21 @@ function App() {
     <div style={{ width: '100%' }}>
       {/* HEADER */}
       <header style={{ textAlign: 'center', marginBottom: '24px', paddingTop: '24px', position: 'relative' }}>
-        <div style={{ position: 'absolute', left: '16px', top: '12px' }}>
+        <div className="app-header-bar">
           <button
             onClick={handleBackToLanding}
             style={{ padding: '8px 14px', color: 'var(--accent-color)', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--card-bg)', borderRadius: '20px', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}
           >
             ← Indietro
           </button>
+          <button
+            onClick={toggleTheme}
+            style={{ padding: '8px', color: 'var(--text-secondary)', display: 'flex' }}
+            aria-label="Toggle Tema"
+          >
+            {theme === 'dark' ? <Sun size={26} strokeWidth={2.5} /> : <Moon size={26} strokeWidth={2.5} />}
+          </button>
         </div>
-        <button
-          onClick={toggleTheme}
-          style={{ position: 'absolute', right: '16px', top: '12px', padding: '8px', color: 'var(--text-secondary)' }}
-          aria-label="Toggle Tema"
-        >
-          {theme === 'dark' ? <Sun size={26} strokeWidth={2.5} /> : <Moon size={26} strokeWidth={2.5} />}
-        </button>
 
         <div className="flex-center" style={{ gap: '12px', marginBottom: '8px', paddingTop: '4px' }}>
           <img src="/icon.svg" alt="IPSC Logo" width="40" height="40" style={{ borderRadius: '10px', boxShadow: 'var(--shadow-md)' }} />

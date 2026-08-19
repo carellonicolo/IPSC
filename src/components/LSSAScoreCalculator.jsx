@@ -100,21 +100,21 @@ export default function LSSAScoreCalculator({ onBack, theme, toggleTheme }) {
     <div style={{ width: '100%' }}>
       {/* HEADER */}
       <header style={{ textAlign: 'center', marginBottom: '24px', paddingTop: '24px', position: 'relative' }}>
-        <div style={{ position: 'absolute', left: '16px', top: '12px', display: 'flex', gap: '8px' }}>
+        <div className="app-header-bar">
           <button
             onClick={onBack}
             style={{ padding: '8px 14px', color: 'var(--lssa-accent)', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--card-bg)', borderRadius: '20px', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}
           >
             ← Indietro
           </button>
+          <button
+            onClick={toggleTheme}
+            style={{ padding: '8px', color: 'var(--text-secondary)', display: 'flex' }}
+            aria-label="Toggle Tema"
+          >
+            {theme === 'dark' ? <Sun size={26} /> : <Moon size={26} />}
+          </button>
         </div>
-        <button
-          onClick={toggleTheme}
-          style={{ position: 'absolute', right: '16px', top: '12px', padding: '8px', color: 'var(--text-secondary)' }}
-          aria-label="Toggle Tema"
-        >
-          {theme === 'dark' ? <Sun size={26} /> : <Moon size={26} />}
-        </button>
 
         <div className="flex-center" style={{ gap: '12px', marginBottom: '8px', paddingTop: '4px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--lssa-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)' }}>
